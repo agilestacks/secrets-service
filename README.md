@@ -7,7 +7,7 @@ Secrets include:
 - cloud keys, service account certificates - depending on a provider;
 - SSH keys, public and private;
 - TLS keys and certificates, including rotation of [Let's Encrypt] issued certs;
-- cross-account trust relationship roles and, optionally, keys to assume the role;
+- cross-account trust relationship roles and, optionally, keys to assume the role, and keys for the role assumed;
 - admin and special-access users passwords;
 - arbitrary tokens.
 
