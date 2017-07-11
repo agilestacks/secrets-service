@@ -1,0 +1,31 @@
+---
+version: 1
+kind: component
+meta:
+  name: secrets-service
+  brief: Secrets service
+  source:
+      dir: ../api
+
+requires:
+  - kubernetes
+
+parameters:
+  - name: component.secrets-service.vaultApiEndpoint
+    brief: Vault API endpoint
+    kind: user
+    default: "*unset*"
+    fromEnv: VAULT_API
+
+templates:
+  extra:
+  - files:
+    - template-test.txt
+  - kind: mustache
+    files:
+    - src/repositories/config.json
+
+outputs:
+  - name: component.secrets-service.api
+    brief: Secrets service API endpoint
+    value: http://secrets-service.app.${dns.domain}

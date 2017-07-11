@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{SERVICE_NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    provider: agilestacks.com
+    project: secrets-service
+    kubernetes.io/name: Secrets-Service
+    kubernetes.io/cluster-service: "true"
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3002
+    protocol: TCP
+  - name: legacy
+    port: 3000
+    targetPort: 3002
+    protocol: TCP
+  selector:
+    provider: agilestacks.com
+    project: secrets-service
+    qualifier: api
