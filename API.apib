@@ -238,7 +238,7 @@ User is currently an Okta user and is addressed by Okta user Id with prefix `okt
 
 ### Create User [PUT]
 
-`roleId` must be saved by
+`roleId` must be saved by calling service for use with `/login`.
 
 + Request
 
@@ -268,7 +268,7 @@ Put a list of `environmentId`-s the user has access to.
 
     + Headers
 
-            X-Secrets-Token: high-privilege-automation-hub-token | high-privilege-auth-service-token
+            X-Secrets-Token: high-privilege-automation-hub-token | high-privilege-auth-service-token?
 
     + Body
 
