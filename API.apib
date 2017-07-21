@@ -268,7 +268,7 @@ Put a list of `environmentId`-s the user has access to.
 
     + Headers
 
-            X-Secrets-Token: high-privilege-auth-service-token
+            X-Secrets-Token: high-privilege-automation-hub-token | high-privilege-auth-service-token
 
     + Body
 
@@ -329,7 +329,10 @@ Login to obtain `user-token`.
 
 ## Apps [/apps/{appId}]
 
-The only currently recognised app is Authentication Service with Id `authentication-service`.
+The only currently recognised apps are:
+
+- Authentication Service with Id `authentication-service`;
+- Automation Hub with Id `automation-hub`.
 
 Request source IP CIDR will be checked too.
 
