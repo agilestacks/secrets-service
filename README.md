@@ -79,6 +79,7 @@ Cloud account temporary credentials for AWS obtained via STS or AssumeRole:
 
 ```json
 {
+    "cloud": "aws",
     "accessKey": "AKIA****************",
     "secretKey": "qwerty**********************************",
     "sessionToken": "..."
