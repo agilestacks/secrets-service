@@ -5,4 +5,410 @@ HOST: http://secrets.agilestacks.com/api/v1
 
 Secrets Service has protected HTTP API to provide access to all it's functions, such as:
 
-- saving and retrieving secrets.
+- saving and retrieving secrets;
+- obtaining expiring tokens to access secrets;
+- manage secrets permissions.
+
+Please read [design](https://github.com/agilestacks/secrets-service/blob/master/README.md) first.
+
+
+## Secret [/environments/{environmentId}/secrets/{secretId}]
+
+Secret is bound to environment.
+
+`kind` is one of `password`, `cloudAccount`.
+
++ Parameters
+    + environmentId: `123` (string) - ID of the Environment
+    + secretId: `component.postgresql.password` (string) - ID of the Secret
+
+
+### Retrieve Secret [GET]
+
+Reading cloud account entity returns original security-sensitive information masked.
+The only way to use cloud account is to request session keys via `/session-keys`.
+
+Password:
+
+```json
+{
+    "id": "02a669c0-543b-432f-a11d-fb21f29c7200",
+    "name": "component.postgresql.password",
+    "kind": "password",
+    "username": "automation-hub",
+    "password": "jai0eite3X"
+}
+```
+
+Cloud account entity:
+
+```json
+{
+    "id": "4ae21e5e-c49f-4222-b164-ffb03d8448dd",
+    "name": "My AWS",
+    "kind": "cloudAccount",
+    "cloud": "aws",
+    "accessKey": "AKIA****************",
+    "secretKey": "IqCFm0**********************************"
+}
+```
+
+```json
+{
+    "id": "4ae21e5e-c49f-4222-b164-ffb03d8448dd",
+    "name": "My AWS",
+    "kind": "cloudAccount",
+    "cloud": "aws",
+    "roleArn": "arn:aws:iam::973998981304:role/xaccount-*********************"
+}
+```
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "id": "02a669c0-543b-432f-a11d-fb21f29c7200",
+                "name": "component.postgresql.password",
+                "kind": "password",
+                "username": "automation-hub",
+                "password": "jai0eite3X"
+            }
+
++ Response 404
+
++ Response 403
+
+
+### Retrieve Cloud Account Session [GET /environments/{environmentId}/secrets/{secretId}/session-keys]
+
+Reading cloud account session endpoint returns AWS keys valid for 1 hour.
+
++ Parameters
+    + environmentId: `123` (string) - ID of the Environment
+    + secretId: `my-aws` (string) - ID of the Secret
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "cloud": "aws",
+                "accessKey": "AKIA****************",
+                "secretKey": "IqCFm0**********************************",
+                "sessionToken": "..."
+            }
+
++ Response 404
+
++ Response 403
+
++ Response 405 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "error": "The requested secret is not `cloudAccount` kind"
+            }
+
++ Response 504
+
++ Response 502 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "error": "AWS STS error: ..."
+            }
+
+
+### Create Secret [POST /environments/{environmentId}/secrets]
+
++ Request (application/json; charset=utf-8)
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
+    + Body
+
+            {
+                "name": "component.postgresql.password",
+                "kind": "password",
+                "username": "automation-hub",
+                "password": "jai0eite3X"
+            }
+
++ Response 201 (application/json; charset=utf-8)
+
+    + Headers
+
+            Location: /environments/123/secrets/02a669c0-543b-432f-a11d-fb21f29c7200
+
+    + Body
+
+            {
+                "id": "02a669c0-543b-432f-a11d-fb21f29c7200"
+            }
+
++ Response 403
+
++ Response 400 (application/json; charset=utf-8)
+
+            {
+                "error": "Error parse JSON input"
+            }
+
+
+### Update Secret [PUT]
+
+The secret `kind` must match otherwise `409 Conflict` will be returned.
+
++ Request (application/json; charset=utf-8)
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
+    + Body
+
+            {
+                "name": "component.postgresql.password",
+                "kind": "password",
+                "username": "automation-hub",
+                "password": "jai0eite3X"
+            }
+
++ Response 204
+
++ Response 404
+
++ Response 403
+
++ Response 400 (application/json; charset=utf-8)
+
+            {
+                "error": "`password` field is not set"
+            }
+
++ Response 409 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "error": "`kind` doesn't match"
+            }
+
+
+### Delete Secret [DELETE]
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
++ Response 204
+
++ Response 404
+
++ Response 403
+
+
+
+## User [/users/{userId}]
+
+User is currently an Okta user and is addressed by Okta user Id with prefix `okta-`, e.g. `okta-00ub0oNGTSWTBKOLGLNR`.
+
++ Parameters
+    + userId: `okta-00ub0oNGTSWTBKOLGLNR` (string) - ID of the User
+
+
+### Create User [PUT]
+
+`roleId` must be saved by
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: high-privilege-auth-service-token
+
++ Response 201 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "roleId": "f2db06c7-1b3c-9262-1116-fa1842a5c567"
+            }
+
++ Response 403
+
+
+### Update User Environments access [PUT /users/{userId}/environments]
+
+Put a list of `environmentId`-s the user has access to.
+
++ Parameters
+    + userId: `okta-00ub0oNGTSWTBKOLGLNR` (string) - ID of the User
+
++ Request (application/json; charset=utf-8)
+
+    + Headers
+
+            X-Secrets-Token: high-privilege-auth-service-token
+
+    + Body
+
+            {
+                "environments": ["env id 1", "env id 2"]
+            }
+
++ Response 204
+
++ Response 404
+
++ Response 403
+
++ Response 400 (application/json; charset=utf-8)
+
+            {
+                "error": "`environments` field is not set"
+            }
+
+
+### Login User to obtain Secrets Token [POST /users/{userId}/login]
+
+Login to obtain `user-token`.
+
++ Parameters
+    + userId: `okta-00ub0oNGTSWTBKOLGLNR` (string) - ID of the User
+
++ Request (application/json; charset=utf-8)
+
+    + Headers
+
+            X-Secrets-Token: low-privilege-auth-service-token
+
+    + Body
+
+            {
+                "roleId": "0dcc3856-c11b-9673-bd30-b083cbae4987"
+            }
+
++ Response 200 (application/json; charset=utf-8)
+
+            {
+                "token": "c9086cfc-c1a4-4609-546d-1f9d860c8ac3",
+                "ttl": 3600
+            }
+
++ Response 404
+
++ Response 403
+
++ Response 400 (application/json; charset=utf-8)
+
+            {
+                "error": "`roleId` field is not set"
+            }
+
+
+
+## Apps [/apps/{appId}]
+
+The only currently recognised app is Authentication Service with Id `authentication-service`.
+
+Request source IP CIDR will be checked too.
+
++ Parameters
+    + appId: `authentication-service` (string) - ID of the Service / App
+
+
+### Login App to obtain Secrets Token [POST /apps/{appId}/login]
+
+Login to obtain `high` and `low-privilege-auth-service-token`-s .
+
++ Parameters
+    + appId: `authentication-service` (string) - ID of the Service / App
+
++ Request (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "highPrivRoleId": "f696ed85-eab6-484f-8f1b-adac94cffc08",
+                "lowPrivRoleId": "41bc5ff3-077c-4613-9419-77fe89267113"
+            }
+
++ Response 200 (application/json; charset=utf-8)
+
+            {
+                "highPrivToken": "89b144e3-d785-46b4-ac3f-5cc504bfc624",
+                "lowPrivToken": "4f5b5510-a6ac-41e1-b4bc-bcff4f522769",
+                "ttl": 3600
+            }
+
++ Response 404
+
++ Response 403
+
++ Response 400 (application/json; charset=utf-8)
+
+            {
+                "error": "`highPrivRoleId` field is not set"
+            }
+
+
+
+## Token [/tokens]
+
+
+### Renew Token [POST /tokens/renew]
+
+`X-Secrets-Token` is the token to operate on.
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: token
+
++ Response 200
+
+    + Body
+
+            {
+                "ttl": 3600
+            }
+
++ Response 403
+
+
+### Revoke Token [POST /tokens/revoke]
+
+Revoke token on user logout.
+
+`X-Secrets-Token` is the token to operate on.
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: token
+
++ Response 204
+
++ Response 403

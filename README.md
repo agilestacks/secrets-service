@@ -169,7 +169,7 @@ To update Vault policy use `PUT` with high-privilege token. Path to the entity t
 }
 ```
 
-At user login use `POST` with low-privilege token to get token for the user from `/api/v1/login`:
+At user login use `POST` with low-privilege token to get token for the user from `/api/v1/users/<okta user id>/login`:
 
 ```json
 {
@@ -185,7 +185,7 @@ Expiring token is returned:
 }
 ```
 
-Every 30 min refresh the token by `POST` with user token into `/api/v1/renew`. And revoke token via `/api/v1/revoke`.
+Every 30 min refresh the token by `POST` with user token into `/api/v1/tokens/renew`. At logout revoke token via `/api/v1/tokens/revoke`.
 
 ## Unseal
 
