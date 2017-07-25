@@ -136,6 +136,9 @@ Reading cloud account session endpoint returns AWS keys valid for 1 hour.
 
 ### Create Secret [POST /environments/{environmentId}/secrets]
 
++ Parameters
+    + environmentId: `123` (string) - ID of the Environment
+
 + Request (application/json; charset=utf-8)
 
     + Headers
@@ -329,7 +332,7 @@ Login to obtain `user-token`.
 
 ## Apps [/apps/{appId}]
 
-The only currently recognised apps are:
+Currently recognised apps are:
 
 - Authentication Service with Id `authentication-service`;
 - Automation Hub with Id `automation-hub`.
