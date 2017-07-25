@@ -260,6 +260,21 @@ User is currently an Okta user and is addressed by Okta user Id with prefix `okt
 + Response 403
 
 
+### Delete User [DELETE]
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: high-privilege-auth-service-token
+
++ Response 204
+
++ Response 404
+
++ Response 403
+
+
 ### Update User Environments access [PUT /users/{userId}/environments]
 
 Put a list of `environmentId`-s the user has access to.
