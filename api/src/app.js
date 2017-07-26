@@ -91,7 +91,7 @@ module.exports = app
         }}} = ctx;
 
         if (token) {
-            ctx.vaultToken = {token};
+            ctx.vaultToken = token;
             await next();
         } else {
             throw new ForbiddenError();
