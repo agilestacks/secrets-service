@@ -2,17 +2,15 @@ const crypto = require('crypto');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
 
-const serviceRoleHighPrivAuth = 'role-stub-high-priv-auth';
-const serviceRoleLowPrivAuth = 'role-stub-low-priv-auth';
-// const serviceRoleHighPrivHub = 'role-stub-high-priv-hub';
-// const serviceRoleLowPrivHub = 'role-stub-low-priv-hub';
+const vaultServiceRoles = require('../vault-service-roles.json');
 
 const apiPrefix = '/api/v1';
 const apiConfig = {
     baseURL: 'http://localhost:3002',
     adapter: httpAdapter,
     timeout: 2000,
-    maxContentLength: 65536
+    maxContentLength: 65536,
+    validateStatus: () => true
 };
 const withApiPrefix = {baseURL: `${apiConfig.baseURL}${apiPrefix}`};
 const withToken = (token) => {
@@ -51,7 +49,7 @@ describe('service roles', () => {
         expect.assertions(4);
 
         const loginResp = await apiV1open.post(authServiceLoginPath,
-            serviceRoles(serviceRoleHighPrivAuth, serviceRoleLowPrivAuth));
+            serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
         expect(loginResp.status).toBe(200);
         expect(loginResp.data.highPrivToken).toBeDefined();
         expect(loginResp.data.lowPrivToken).toBeDefined();
@@ -65,7 +63,7 @@ describe('users', () => {
 
     const setupApi = async () => {
         const loginResp = await apiV1open.post(authServiceLoginPath,
-            serviceRoles(serviceRoleHighPrivAuth, serviceRoleLowPrivAuth));
+            serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
         const tokenHigh = loginResp.data.highPrivToken;
         const tokenLow = loginResp.data.lowPrivToken;
         const config = Object.assign({}, apiConfig, withApiPrefix);
@@ -153,7 +151,7 @@ describe('secrets', () => {
 
     const setupApi = async () => {
         const loginResp = await apiV1open.post(authServiceLoginPath,
-            serviceRoles(serviceRoleHighPrivAuth, serviceRoleLowPrivAuth));
+            serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
         const tokenHigh = loginResp.data.highPrivToken;
         const tokenLow = loginResp.data.lowPrivToken;
         const config = Object.assign({}, apiConfig, withApiPrefix);
@@ -172,8 +170,8 @@ describe('secrets', () => {
 
     beforeAll(setupApi);
 
-    test('create & delete', async () => {
-        expect.assertions(3);
+    test('create, get, update, delete - password', async () => {
+        expect.assertions(8);
 
         const path = '/environments/env-1/secrets';
         const secret = {
@@ -190,9 +188,16 @@ describe('secrets', () => {
 
         const id = postResp.data.id;
         const location = postResp.headers.location;
-        expect(location).toBe(`${withApiPrefix}/${path}/${id}`);
+        expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+        const getResp = await apiV1user.get(`${path}/${id}`);
+        expect(getResp.status).toBe(200);
+        expect(getResp.data).toEqual(Object.assign({}, secret, {id}));
 
         const deleteResp = await apiV1user.delete(`${path}/${id}`);
         expect(deleteResp.status).toBe(204);
+
+        const getNoneResp = await apiV1user.get(`${path}/${id}`);
+        expect(getNoneResp.status).toBe(404);
     });
 });

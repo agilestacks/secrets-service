@@ -14,8 +14,8 @@ Start Vault:
 
 Start server:
 
-    $ make clean && npm start
+    $ npm start
 
-Run Dredd and Jest tests:
+Run Jest tests:
 
     $ npm test

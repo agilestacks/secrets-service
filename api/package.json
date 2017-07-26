@@ -6,7 +6,9 @@
     "dredd": "dredd --config test/dredd.yaml",
     "jest": "jest",
     "lint": "eslint server.js src/ test/",
-    "test": "npm run dredd && npm run jest",
+    "test": "npm run jest",
+    "test-spec": "npm run dredd",
+    "test-all": "npm run dredd && npm run jest",
     "prepush": "npm run lint",
     "debug": "node --nolazy --inspect-brk=5858 server.js"
   },

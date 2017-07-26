@@ -6,7 +6,13 @@ const Router = require('koa-router');
 const {loggerFactory} = require('./logger');
 const {ApiError, ErrorWrapper, ForbiddenError} = require('./errors');
 
-const version = require('./controllers/version');
+const versionC = require('./controllers/version');
+const userC = require('./controllers/user');
+const secretC = require('./controllers/secret');
+const appC = require('./controllers/app');
+const tokenC = require('./controllers/token');
+
+secretC.setApiPrefix(apiPrefix);
 
 const app = new Koa();
 
@@ -19,7 +25,23 @@ const publicRouter = new Router(routerConf);
 publicRouter.get('/ping', (ctx) => {
     ctx.body = 'pong';
 });
-router.get('/version', version.get);
+publicRouter.get('/version', versionC.get);
+
+router.put('/users/:id', userC.create);
+router.del('/users/:id', userC.delete);
+router.put('/users/:id/environments', userC.environments);
+router.post('/users/:id/login', userC.login);
+
+publicRouter.post('/apps/:id/login', appC.login);
+
+router.post('/environments/:environmentId/secrets', secretC.create);
+router.put('/environments/:environmentId/secrets/:id', secretC.update);
+router.get('/environments/:environmentId/secrets/:id', secretC.get);
+router.del('/environments/:environmentId/secrets/:id', secretC.delete);
+router.post('/environments/:environmentId/secrets/:id/session-keys', secretC.sessionKeys);
+
+router.post('/tokens/renew', tokenC.renew);
+router.post('/tokens/revoke', tokenC.revoke);
 
 const idGenerator = {
     id: new Date().getTime(),
@@ -69,7 +91,7 @@ module.exports = app
         }}} = ctx;
 
         if (token) {
-            ctx.user = {token};
+            ctx.vaultToken = {token};
             await next();
         } else {
             throw new ForbiddenError();
