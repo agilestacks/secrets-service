@@ -63,3 +63,6 @@ run:
 	@npm start
 .PHONY: run
 
+vault-test-setup:
+	@bin/vault-test-setup.sh
+.PHONY: vault-test

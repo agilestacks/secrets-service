@@ -7,7 +7,11 @@ Secrets service implements Secrets [API](../API.md).
 Install dependencies:
 
     $ npm install
-    
+
+Start Vault:
+
+    $ make vault-test-setup
+
 Start server:
 
     $ make clean && npm start

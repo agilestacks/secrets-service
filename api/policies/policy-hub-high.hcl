@@ -1,8 +1,4 @@
-path "secret/env-1/*" {
-  capabilities = ["create", "read", "update", "delete", "list"]
-}
-
-path "secret/env-2/*" {
+path "sys/policy/*" {
   capabilities = ["create", "read", "update", "delete", "list"]
 }
 
