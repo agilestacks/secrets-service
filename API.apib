@@ -86,9 +86,9 @@ Cloud account entity:
 + Response 403
 
 
-### Retrieve Cloud Account Session [GET /environments/{environmentId}/secrets/{secretId}/session-keys]
+### Retrieve Cloud Account Session [POST /environments/{environmentId}/secrets/{secretId}/session-keys]
 
-Reading cloud account session endpoint returns AWS keys valid for 1 hour.
+Post-ing empty request to cloud account session endpoint returns AWS keys valid for 1 hour.
 
 + Parameters
     + environmentId: `123` (string) - ID of the Environment
@@ -108,7 +108,8 @@ Reading cloud account session endpoint returns AWS keys valid for 1 hour.
                 "cloud": "aws",
                 "accessKey": "AKIA****************",
                 "secretKey": "IqCFm0**********************************",
-                "sessionToken": "..."
+                "sessionToken": "...",
+                "ttl": 3600
             }
 
 + Response 404
@@ -420,7 +421,7 @@ Login to obtain `high` and `low-privilege-auth-service-token`-s .
 
 ### Revoke Token [POST /tokens/revoke]
 
-Revoke token on user logout.
+Authentication Service should revoke user token on user logout.
 
 `X-Secrets-Token` is the token to operate on.
 
