@@ -1,8 +1,8 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{DEPLOYMENT_NAME}}
-  namespace: {{NAMESPACE}}
+  name: ${component.secrets-service.service}
+  namespace: ${component.secrets-service.namespace}
   labels:
     provider: agilestacks.com
     project: secrets-service
@@ -11,8 +11,8 @@ spec:
   replicas: 1
   template:
     metadata:
-      name: {{DEPLOYMENT_NAME}}
-      namespace: {{NAMESPACE}}
+      name: ${component.secrets-service.service}
+      namespace: ${component.secrets-service.namespace}
       labels:
         provider: agilestacks.com
         project: secrets-service
@@ -20,18 +20,18 @@ spec:
     spec:
       containers:
       - name: api
-        image: {{IMAGE_NAME}}
+        image: ${component.secrets-service.image}
         imagePullPolicy: Always
         ports:
         - name: http
-          containerPort: 3001
+          containerPort: 3002
         readinessProbe:
           httpGet:
             path: /api/v1/ping
-            port: 3001
+            port: 3002
         livenessProbe:
           httpGet:
             path: /api/v1/ping
-            port: 3001
+            port: 3002
           initialDelaySeconds: 60
           timeoutSeconds: 3

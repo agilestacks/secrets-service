@@ -1,0 +1,26 @@
+---
+version: 1
+kind: component
+meta:
+  name: auth-proxy-cloud
+  brief: Cloud Resources for Authorization and Authentication Serivce
+  source:
+    dir: .
+
+parameters:
+- name: dns.name
+  default: default
+  env: TF_VAR_name
+- name: dns.baseDomain
+  default: stacks.delivery
+  env: TF_VAR_base_domain
+- name: cloud.region
+  kind: user
+  env: AWS_DEFAULT_REGION
+outputs:
+- name: component.secrets-service.image
+  brief: Agile Stacks Jenkins docker repository
+  fromTfVar: repository_url
+
+templates:
+  files: ["*.template"]

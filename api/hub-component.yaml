@@ -8,24 +8,29 @@ meta:
       dir: ../api
 
 requires:
-  - kubernetes
+- kubernetes
 
 parameters:
-  - name: component.secrets-service.vaultApiEndpoint
-    brief: Vault API endpoint
+- name: component.secrets-service
+  parameters:
+  - name: namespace
+    env:  NAMESPACE
+  - name: image
+    env:  IMAGE
+  - name: service
+    default: secrets
+  - name: vaultApiEndpoint
     kind: user
     default: "*unset*"
     fromEnv: VAULT_API
 
 templates:
+  files: ["templates/*.template"]
   extra:
-  - files:
-    - template-test.txt
-  - kind: mustache
-    files:
-    - src/repositories/config.json
+  - kind: curly
+    files: ["*.template"]
 
 outputs:
-  - name: component.secrets-service.api
-    brief: Secrets service API endpoint
-    value: http://secrets-service.app.${dns.domain}
+- name: component.secrets-service.api
+  brief: Secrets service API endpoint
+  value: http://secrets-service.app.${dns.domain}
