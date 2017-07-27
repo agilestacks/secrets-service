@@ -85,6 +85,10 @@ Cloud account entity:
 
 + Response 403
 
++ Response 502
+
++ Response 504
+
 
 ### Retrieve Cloud Account Session [POST /environments/{environmentId}/secrets/{secretId}/session-keys]
 
@@ -175,6 +179,10 @@ Post-ing empty request to cloud account session endpoint returns AWS keys valid 
                 "error": "Error parse JSON input"
             }
 
++ Response 502
+
++ Response 504
+
 
 ### Update Secret [PUT]
 
@@ -215,6 +223,10 @@ The secret `kind` must match otherwise `409 Conflict` will be returned.
                 "error": "`kind` doesn't match"
             }
 
++ Response 502
+
++ Response 504
+
 
 ### Delete Secret [DELETE]
 
@@ -229,6 +241,10 @@ The secret `kind` must match otherwise `409 Conflict` will be returned.
 + Response 404
 
 + Response 403
+
++ Response 502
+
++ Response 504
 
 
 
@@ -260,6 +276,10 @@ User is currently an Okta user and is addressed by Okta user Id with prefix `okt
 
 + Response 403
 
++ Response 502
+
++ Response 504
+
 
 ### Delete User [DELETE]
 
@@ -274,6 +294,10 @@ User is currently an Okta user and is addressed by Okta user Id with prefix `okt
 + Response 404
 
 + Response 403
+
++ Response 502
+
++ Response 504
 
 
 ### Update User Environments access [PUT /users/{userId}/environments]
@@ -306,6 +330,10 @@ Put a list of `environmentId`-s the user has access to.
             {
                 "error": "`environments` field is not set"
             }
+
++ Response 502
+
++ Response 504
 
 
 ### Login User to obtain Secrets Token [POST /users/{userId}/login]
@@ -343,6 +371,10 @@ Login to obtain `user-token`.
             {
                 "error": "`roleId` field is not set"
             }
+
++ Response 502
+
++ Response 504
 
 
 
@@ -393,6 +425,10 @@ Login to obtain `high` and `low-privilege-auth-service-token`-s .
                 "error": "`highPrivRoleId` field is not set"
             }
 
++ Response 502
+
++ Response 504
+
 
 
 ## Token [/tokens]
@@ -418,6 +454,10 @@ Login to obtain `high` and `low-privilege-auth-service-token`-s .
 
 + Response 403
 
++ Response 502
+
++ Response 504
+
 
 ### Revoke Token [POST /tokens/revoke]
 
@@ -434,3 +474,7 @@ Authentication Service should revoke user token on user logout.
 + Response 204
 
 + Response 403
+
++ Response 502
+
++ Response 504
