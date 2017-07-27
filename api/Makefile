@@ -26,6 +26,7 @@ push:
 .PHONY: push
 
 deploy: build push
+	$(kubectl) apply -f templates/namespace.yaml
 	$(kubectl) apply -f templates/service.yaml
 	$(kubectl) apply -f templates/deployment.yaml
 .PHONY: deploy
@@ -33,6 +34,7 @@ deploy: build push
 undeploy:
 	$(kubectl) delete -f templates/deployment.yaml | true
 	$(kubectl) delete -f templates/service.yaml    | true
+	$(kubectl) delete -f templates/namespace.yaml  | true
 .PHONY: undeploy
 
 install:

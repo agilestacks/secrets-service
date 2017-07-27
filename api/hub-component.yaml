@@ -14,6 +14,7 @@ parameters:
 - name: component.secrets-service
   parameters:
   - name: namespace
+    default: automation-hub
     env:  NAMESPACE
   - name: image
     env:  IMAGE
@@ -23,6 +24,9 @@ parameters:
     kind: user
     default: "*unset*"
     fromEnv: VAULT_API
+- name: dns.domain
+  brief: DNS domain
+  kind: tech
 
 templates:
   files: ["templates/*.template"]
