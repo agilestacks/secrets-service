@@ -162,6 +162,8 @@ describe('secrets', () => {
         const user = `/users/okta-${randomSuf()}`;
         const putResp = await apiV1serviceHigh.put(user);
         const roleId = putResp.data.roleId;
+        // eslint-disable-next-line no-unused-vars
+        const putEnvResp = await apiV1serviceHigh.put(`${user}/environments`, {environments: ['env-1']});
         const userLoginResp = await apiV1serviceLow.post(`${user}/login`, {roleId});
         const tokenUser = userLoginResp.data.token;
 
