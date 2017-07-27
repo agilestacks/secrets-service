@@ -1,5 +1,5 @@
 path "sys/policy/*" {
-  capabilities = ["create", "read", "update", "delete", "list"]
+  capabilities = ["read", "update"]
 }
 
 path "auth/token/renew-self" {

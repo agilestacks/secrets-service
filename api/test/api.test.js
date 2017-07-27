@@ -44,7 +44,7 @@ describe('basic routing', () => {
     });
 });
 
-describe('service roles', () => {
+describe('app service roles', () => {
     test('login', async () => {
         expect.assertions(4);
 
@@ -128,7 +128,7 @@ describe('users', () => {
 
         const path = '/users/okta-5';
 
-        const putResp = await apiV1serviceLow.put(path);
+        const putResp = await apiV1serviceHigh.put(path);
         expect(putResp.status).toBe(201);
         expect(putResp.data.roleId).toBeDefined();
 
@@ -139,7 +139,7 @@ describe('users', () => {
         expect(loginResp.data.token).toBeDefined();
         expect(loginResp.data.ttl).toBeDefined();
 
-        const deleteResp = await apiV1serviceLow.delete(path);
+        const deleteResp = await apiV1serviceHigh.delete(path);
         expect(deleteResp.status).toBe(204);
     });
 });

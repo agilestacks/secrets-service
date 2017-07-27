@@ -1,17 +1,33 @@
+const {api} = require('../vault');
+
+const knownApps = ['authentication-service', 'automation-hub'];
+
+async function loginRole(roleId) {
+    const respLogin = await api.post('/auth/approle/login', {role_id: roleId});
+    return {
+        token: respLogin.data.auth.client_token,
+        ttl: respLogin.data.auth.lease_duration
+    };
+}
+
 module.exports = {
-    login(ctx) {
+    async login(ctx) {
+        const app = ctx.params.id;
+        const known = knownApps.some(name => name === app);
         const roleIdHigh = ctx.request.body.highPrivRoleId;
         const roleIdLow = ctx.request.body.lowPrivRoleId;
-        if (roleIdHigh && roleIdLow) {
-            ctx.status = 200;
-            ctx.body = {
-                highPrivToken: '89b144e3-d785-46b4-ac3f-5cc504bfc624',
-                lowPrivToken: '4f5b5510-a6ac-41e1-b4bc-bcff4f522769',
-                ttl: 3600
-            };
-        } else {
+        if (!known) {
+            ctx.status = 400;
+            ctx.body = {error: `\`${app}\` is not known application`};
+        } else if (!roleIdHigh || !roleIdLow) {
             ctx.status = 400;
             ctx.body = {error: 'Either `highPrivRoleId` or `lowPrivRoleId` field is not set'};
+        } else {
+            const {token: highPrivToken, ttl: ttlH} = await loginRole(roleIdHigh);
+            const {token: lowPrivToken, ttl: ttlL} = await loginRole(roleIdLow);
+            const ttl = Math.min(ttlH, ttlL);
+            ctx.status = 200;
+            ctx.body = {highPrivToken, lowPrivToken, ttl};
         }
     }
 };
