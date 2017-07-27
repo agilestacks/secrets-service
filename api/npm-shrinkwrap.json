@@ -2445,9 +2445,8 @@
     },
     "lodash": {
       "version": "4.17.4",
-      "from": "lodash@>=4.14.0 <5.0.0",
-      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz",
-      "dev": true
+      "from": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz"
     },
     "lodash._baseassign": {
       "version": "3.2.0",
