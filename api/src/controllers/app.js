@@ -1,12 +1,20 @@
-const {api} = require('../vault');
+const {api, goodStatus, proxyErrorStatus} = require('../vault');
+const {logger} = require('../logger');
 
 const knownApps = ['authentication-service', 'automation-hub'];
 
 async function loginRole(roleId) {
     const respLogin = await api.post('/auth/approle/login', {role_id: roleId});
+    if (goodStatus(respLogin)) {
+        return {
+            token: respLogin.data.auth.client_token,
+            ttl: respLogin.data.auth.lease_duration
+        };
+    }
+    logger.warn('Unexpected status %d from Vault during role `%s` login: %j',
+        respLogin.status, roleId, respLogin.data);
     return {
-        token: respLogin.data.auth.client_token,
-        ttl: respLogin.data.auth.lease_duration
+        error: proxyErrorStatus(respLogin)
     };
 }
 
@@ -23,11 +31,15 @@ module.exports = {
             ctx.status = 400;
             ctx.body = {error: 'Either `highPrivRoleId` or `lowPrivRoleId` field is not set'};
         } else {
-            const {token: highPrivToken, ttl: ttlH} = await loginRole(roleIdHigh);
-            const {token: lowPrivToken, ttl: ttlL} = await loginRole(roleIdLow);
+            const {token: highPrivToken, ttl: ttlH, error: errorH} = await loginRole(roleIdHigh);
+            const {token: lowPrivToken, ttl: ttlL, error: errorL} = await loginRole(roleIdLow);
             const ttl = Math.min(ttlH, ttlL);
-            ctx.status = 200;
-            ctx.body = {highPrivToken, lowPrivToken, ttl};
+            if (errorH || errorL) {
+                ctx.status = errorH || errorL;
+            } else {
+                ctx.status = 200;
+                ctx.body = {highPrivToken, lowPrivToken, ttl};
+            }
         }
     }
 };
