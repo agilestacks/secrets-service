@@ -314,4 +314,17 @@ describe('secrets', () => {
         const getNoneResp = await apiV1user.get(`${path}/${id}`);
         expect(getNoneResp.status).toBe(404);
     });
+
+    // hope it is the last test to execute
+    test('renew, revoke - token', async () => {
+        const renewResp = await apiV1user.post('/tokens/renew');
+        expect(renewResp.status).toBe(200);
+        expect(renewResp.data.ttl).toBe(3600);
+
+        const revokeResp = await apiV1user.post('/tokens/revoke');
+        expect(revokeResp.status).toBe(204);
+
+        const renewRevokedResp = await apiV1user.post('/tokens/renew');
+        expect(renewRevokedResp.status).toBe(403);
+    });
 });
