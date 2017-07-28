@@ -12,5 +12,13 @@ module.exports = {
 
     withToken(token) {
         return {headers: {'X-Vault-Token': token}};
+    },
+
+    goodStatus(response) {
+        return [200, 201, 204].some(good => good === response.status);
+    },
+
+    proxyErrorStatus(response) {
+        return response.status === 403 || response.status === 404 ? response.status : 502;
     }
 };
