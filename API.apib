@@ -92,7 +92,11 @@ Cloud account entity:
 
 ### Retrieve Cloud Account Session [POST /environments/{environmentId}/secrets/{secretId}/session-keys]
 
-Post-ing empty request to cloud account session endpoint returns AWS keys valid for 1 hour.
+Post to cloud account session endpoint returns AWS keys valid for 1 hour.
+Optionaly send `purpose` to be included as part of _role session name_ sent to STS.
+
+If cloud account credentials are `accessKey` and `secretKey` pair, then is must be keys either of account
+root user or IAM user with MFA **disabled**.
 
 + Parameters
     + environmentId: `123` (string) - ID of the Environment
@@ -103,6 +107,13 @@ Post-ing empty request to cloud account session endpoint returns AWS keys valid 
     + Headers
 
             X-Secrets-Token: user-token
+
+    + Body
+
+            {
+                "purpose": "stack-k8s-aws deployment"
+            }
+
 
 + Response 200 (application/json; charset=utf-8)
 
