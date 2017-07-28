@@ -1,4 +1,4 @@
-const {api, withToken} = require('../vault');
+const {api, withToken, goodStatus, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
 
 const users = new Map(); // to save test stubs
@@ -19,8 +19,6 @@ path "auth/token/revoke-self" {
 }
 `;
 
-const goodStatus = status => [200, 201, 204].some(good => good === status);
-
 module.exports = {
     async create(ctx) {
         const id = ctx.params.id;
@@ -36,7 +34,7 @@ module.exports = {
         } else {
             const rules = tokenPolicyFragment;
             const policyResp = await api.put(`/sys/policy/${id}`, {rules}, withToken(ctx.vaultToken));
-            if (goodStatus(policyResp.status)) {
+            if (goodStatus(policyResp)) {
                 const rolePath = `/auth/approle/role/${id}`;
                 const role = {
                     period: 3600,
@@ -44,7 +42,7 @@ module.exports = {
                     policies: id
                 };
                 const roleResp = await api.post(rolePath, role, withToken(ctx.vaultToken));
-                if (goodStatus(roleResp.status)) {
+                if (goodStatus(roleResp)) {
                     const roleIdResp = await api.get(`${rolePath}/role-id`, withToken(ctx.vaultToken));
                     if (roleIdResp.status === 200) {
                         const roleId = roleIdResp.data.data.role_id;
@@ -53,17 +51,17 @@ module.exports = {
                     } else {
                         logger.warn('Unexpected status %d from Vault fetching role `%s` role-id: %j',
                             roleIdResp.status, id, roleIdResp.data);
-                        ctx.status = roleIdResp.status === 403 ? 403 : 502;
+                        ctx.status = proxyErrorStatus(roleIdResp);
                     }
                 } else {
                     logger.warn('Unexpected status %d from Vault while creating role `%s`: %j',
                         roleResp.status, id, roleResp.data);
-                    ctx.status = roleResp.status === 403 ? 403 : 502;
+                    ctx.status = proxyErrorStatus(roleResp);
                 }
             } else {
                 logger.warn('Unexpected status %d from Vault while creating policy `%s`: %j',
                     policyResp.status, id, policyResp.data);
-                ctx.status = policyResp.status === 403 ? 403 : 502;
+                ctx.status = proxyErrorStatus(policyResp);
             }
         }
     },
@@ -95,7 +93,7 @@ module.exports = {
                 if (!error) {
                     ctx.status = 204;
                 } else {
-                    ctx.status = roleDeleteResp.status === 403 || policyDeleteResp.status === 403 ? 403 : 502;
+                    ctx.status = proxyErrorStatus(roleDeleteResp);
                 }
             } else {
                 ctx.status = roleIdResp.status;
@@ -117,12 +115,12 @@ module.exports = {
                         environmentPolicyFragment.replace('{{env}}', env)).join('\n');
                     const rules = [environmentsPolicy, tokenPolicyFragment].join('\n');
                     const policyPutResp = await api.put(policyPath, {rules}, withToken(ctx.vaultToken));
-                    if (goodStatus(policyPutResp.status)) {
+                    if (goodStatus(policyPutResp)) {
                         ctx.status = 204;
                     } else {
                         logger.warn('Unexpected status %d from Vault while updating policy `%s`: %j',
                             policyResp.status, id, policyPutResp.data);
-                        ctx.status = policyPutResp.status === 403 ? 403 : 502;
+                        ctx.status = proxyErrorStatus(policyPutResp);
                     }
                 } else {
                     ctx.status = policyResp.status;
@@ -153,7 +151,7 @@ module.exports = {
             } else {
                 const respSecretId = await api.post(`/auth/approle/role/${id}/secret-id`, undefined,
                     withToken(ctx.vaultToken));
-                if (goodStatus(respSecretId.status)) {
+                if (goodStatus(respSecretId)) {
                     const secretId = respSecretId.data.data.secret_id;
                     const respLogin = await api.post('/auth/approle/login', {role_id: roleId, secret_id: secretId},
                         withToken(ctx.vaultToken));
@@ -164,14 +162,14 @@ module.exports = {
                             ttl: respLogin.data.auth.lease_duration
                         };
                     } else {
-                        logger.warn('Unexpected status %d from Vault while login-in role `%s`: %j',
+                        logger.warn('Unexpected status %d from Vault during role `%s` login: %j',
                             respLogin.status, id, respLogin.data);
-                        ctx.status = respLogin.status === 403 ? 403 : 502;
+                        ctx.status = proxyErrorStatus(respLogin);
                     }
                 } else {
                     logger.warn('Unexpected status %d from Vault while obtaining secret for role `%s`: %j',
                         respSecretId.status, id, respSecretId.data);
-                    ctx.status = respSecretId.status === 403 ? 403 : 502;
+                    ctx.status = proxyErrorStatus(respSecretId);
                 }
             }
         } else {
