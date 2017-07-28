@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const apiConfig = {
     baseURL: 'http://localhost:8200/v1',
-    timeout: 2000,
+    timeout: 10000,
     maxContentLength: 65536,
     validateStatus: () => true
 };
