@@ -59,15 +59,17 @@ module.exports = app
         const logger = loggerFactory({requestId: idGenerator.next()});
         ctx.logger = logger;
 
-        logger.info('HTTP Request', {method, url});
-        logger.debug('HTTP Request body: %j', request.body);
+        logger.debug('HTTP <<<: %s %s', method, url);
+        logger.silly('HTTP <<<: X-Secrets-Token: %s', request.headers['x-secrets-token']);
+        logger.silly('HTTP <<<: %j', request.body);
         try {
             await next();
         } catch (e) {
             logger.warn('Error', e);
         }
 
-        logger.debug('HTTP Response: %j', ctx.body, {status: ctx.status});
+        logger.debug('HTTP ===: %d', ctx.status);
+        logger.silly('HTTP ===: %j', ctx.body);
     })
     .use(async (ctx, next) => {
         try {
