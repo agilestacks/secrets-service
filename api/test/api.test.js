@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
 
+// eslint-disable-next-line import/no-unresolved
 const vaultServiceRoles = require('../vault-service-roles.json');
 
 const apiPrefix = '/api/v1';
