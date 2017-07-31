@@ -5,8 +5,8 @@ RUN mkdir /app
 WORKDIR /app
 
 ENV NODE_ENV $NODE_ENV
-COPY package.json npm-shrinkwrap.json /app/
-RUN npm -q install --only=prod && npm -q cache clean
+COPY package.json package-lock.json /app/
+RUN npm -q install --only=prod
 COPY server.js /app/
 COPY src/ /app/src/
 
