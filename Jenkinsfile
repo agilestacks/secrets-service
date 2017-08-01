@@ -18,7 +18,7 @@ def region    = Regions.currentRegion.name
 
 @NonCPS
 def kubeClient() {
-    return new DefaultKubernetesClient(new ConfigBuilder().withNamespace('automation-hub').build())
+    return new DefaultKubernetesClient(new ConfigBuilder().build())
 }
 
 @NonCPS
@@ -61,18 +61,6 @@ node('master') {
         git credentialsId: 'github-user', url: 'https://github.com/agilestacks/secrets-service.git'
         commit = commitHash()
     }
-
-    stage('Initialize') {
-        def slurper   = new groovy.json.JsonSlurper()
-        def jsonFile  = kubeClient().
-                          configMaps().
-                          inNamespace(namespace).
-                          withName('jenkins').get().data['cloud.json']
-        def conf  = slurper.parseText(jsonFile)
-
-        secretsServiceImage    = conf.secrets_service_image
-        secretsServiceEndpoint = conf.secrets_service_endpoint
-    }
 }
 
 podTemplate( inheritFrom: 'agilestacks',label: 'pod',
@@ -91,8 +79,8 @@ podTemplate( inheritFrom: 'agilestacks',label: 'pod',
             }
             stage('Build Container') {
                 def auth = authenticateECR(region)
-                imageTag1 = "${secretsServiceImage}:${commit}"
-                imageTag2 = "${secretsServiceImage}:build-${env.BUILD_NUMBER}"
+                imageTag1 = "${env.SECRETS_SERVICE_IMAGE}:${commit}"
+                imageTag2 = "${env.SECRETS_SERVICE_IMAGE}:build-${env.BUILD_NUMBER}"
 
                 container('dind') {
                     sh """
