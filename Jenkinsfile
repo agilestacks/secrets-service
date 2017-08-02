@@ -108,14 +108,7 @@ podTemplate( inheritFrom: 'agilestacks',label: 'pod',
 
             stage('Test') {
                 container('dredd') {
-                    // def dreddConfig = readFile file: 'test/dredd.yaml'
-                    // echo "Replace URL from dredd.yaml to ${secretsServiceEndpoint}"
-                    // dreddConfig.replaceAll(/endpoint:.*/, "endpoint: ${secretsServiceEndpoint}")
-                    // writeFile file: 'test/dredd-jenkins.yaml', text: dreddConfig
-
-                    // sh "dredd --config test/dredd-jenkins.yaml"
-                    echo Do nothing so far
-                    // sleep time: 600
+                    echo "Do nothing so far"
                 }
             }
         }
