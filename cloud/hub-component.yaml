@@ -11,6 +11,9 @@ parameters:
 - name: dns.name
   default: default
   env: TF_VAR_name
+- name: component.secrets-service.service
+  default: secrets-service
+  env: COMPONENT_NAME
 - name: dns.baseDomain
   default: stacks.delivery
   env: TF_VAR_base_domain
