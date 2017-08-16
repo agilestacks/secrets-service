@@ -2,7 +2,7 @@
 version: 1
 kind: component
 meta:
-  name: auth-proxy-cloud
+  name: secrets-service-cloud
   brief: Cloud Resources for Authorization and Authentication Serivce
   source:
     dir: .
