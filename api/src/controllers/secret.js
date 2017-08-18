@@ -31,12 +31,7 @@ function assumeRole(roleName, purpose) {
         RoleSessionName: `${prefix}-${randomSuf()}`, // max length is 64
         DurationSeconds: stsTtl
     };
-    return new Promise((resolve, reject) => {
-        sts.assumeRole(params, (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-        });
-    });
+    return sts.assumeRole(params).promise();
 }
 
 function getSession(accessKeyId, secretAccessKey) {
@@ -44,12 +39,7 @@ function getSession(accessKeyId, secretAccessKey) {
     const params = {
         DurationSeconds: stsTtl
     };
-    return new Promise((resolve, reject) => {
-        accountSts.getSessionToken(params, (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-        });
-    });
+    return accountSts.getSessionToken(params).promise();
 }
 
 function maskRole(roleArn) {
