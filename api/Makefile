@@ -2,27 +2,24 @@
 
 .DEFAULT_GOAL := lint
 
-export AWS_ACCOUNT_NUMBER ?= 973998981304
-export TF_VAR_name        ?= dev
 export AWS_DEFAULT_REGION ?= us-east-2
-export IMAGE              ?= $(AWS_ACCOUNT_NUMBER).dkr.ecr.$(AWS_DEFAULT_REGION).amazonaws.com/agilestacks/$(TF_VAR_name)/secrets-service
-export IMAGE_NAME         ?= $(IMAGE):$(IMAGE_VERSION)
+export TF_VAR_name        ?= dev
+export TF_VAR_base_domain ?= stack.delivery
+export REGISTRY           ?= $(subst https://,,$(lastword $(shell aws ecr get-login --region $(AWS_DEFAULT_REGION))))
+export IMAGE              ?= $(REGISTRY)/agilestacks/$(TF_VAR_name)/secrets-service
 export IMAGE_VERSION      ?= $(shell git rev-parse HEAD | colrm 7)
-export IMAGE_NAME_LATEST  ?= $(IMAGE):latest
-export DOMAIN_NAME        ?= $(TF_VAR_name).$(TF_VAR_base_domain)
 export NAMESPACE          ?= automation-hub
-export kubectl            ?= kubectl --context="$(DOMAIN_NAME)" --namespace="$(NAMESPACE)"
+export kubectl            ?= kubectl --context="$(TF_VAR_name).$(TF_VAR_base_domain)" --namespace="$(NAMESPACE)"
 
 build:
-	@git rev-parse HEAD | colrm 7 > rev.txt
-	@docker build -t $(IMAGE_NAME) .
+	@docker build -t $(IMAGE):$(IMAGE_VERSION) .
 .PHONY: build
 
 push:
 	aws ecr get-login --region $(AWS_DEFAULT_REGION) | sed -e 's/[ +]-e[ +]none[ +]/ /g' | sh -
-	docker tag  $(IMAGE_NAME) $(IMAGE_NAME_LATEST)
-	docker push $(IMAGE_NAME)
-	docker push $(IMAGE_NAME_LATEST)
+	docker tag  $(IMAGE):$(IMAGE_VERSION) $(IMAGE):latest
+	docker push $(IMAGE):$(IMAGE_VERSION)
+	docker push $(IMAGE):latest
 .PHONY: push
 
 deploy: build push
