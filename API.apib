@@ -135,8 +135,21 @@ root user or IAM user with MFA **disabled**.
 
     + Body
 
-            {
-                "error": "The requested secret is not `cloudAccount` kind"
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "The requested secret is not `cloudAccount` kind",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "The requested secret is not `cloudAccount` kind",
+                                "meta": {
+                                    "stack":"Error: The requested secret is not `cloudAccount` kind...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 504
@@ -145,8 +158,21 @@ root user or IAM user with MFA **disabled**.
 
     + Body
 
-            {
-                "error": "AWS STS error: ..."
+            "errors": [
+                    {
+                        "type": "serverError",
+                        "detail": "AWS STS error: ...",
+                        "meta": {
+                            "errors": {
+                                "type": "serverError",
+                                "detail": "AWS STS error: ...",
+                                "meta": {
+                                    "stack":"Error: AWS STS error: ......js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 
@@ -186,8 +212,21 @@ root user or IAM user with MFA **disabled**.
 
 + Response 400 (application/json; charset=utf-8)
 
-            {
-                "error": "Error parse JSON input"
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "Error parse JSON input",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "Error parse JSON input",
+                                "meta": {
+                                    "stack":"Error: Error parse JSON input...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 502
@@ -222,16 +261,42 @@ The secret `kind` must match otherwise `409 Conflict` will be returned.
 
 + Response 400 (application/json; charset=utf-8)
 
-            {
-                "error": "`password` field is not set"
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "`password` field is not set",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "`password` field is not set",
+                                "meta": {
+                                    "stack":"Error: `password` field is not set...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 409 (application/json; charset=utf-8)
 
     + Body
 
-            {
-                "error": "`kind` doesn't match"
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "`kind` doesn't match",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "`kind` doesn't match",
+                                "meta": {
+                                    "stack":"Error: `kind` doesn't match...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 502
@@ -338,8 +403,21 @@ Put a list of `environmentId`-s the user has access to.
 
 + Response 400 (application/json; charset=utf-8)
 
-            {
-                "error": "`environments` field is not set"
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "`environments` field is not set",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "`environments` field is not set",
+                                "meta": {
+                                    "stack":"Error: `environments` field is not set...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 502
@@ -380,7 +458,21 @@ Login to obtain `user-token`.
 + Response 400 (application/json; charset=utf-8)
 
             {
-                "error": "`roleId` field is not set"
+                "errors":[
+                    {
+                        "type": "badRequest",
+                        "detail": "Either `highPrivRoleId` or `lowPrivRoleId` field is not set",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "Either `highPrivRoleId` or `lowPrivRoleId` field is not set",
+                                "meta": {
+                                    "stack":"Error: Either `highPrivRoleId` or `lowPrivRoleId`...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 502
@@ -433,7 +525,21 @@ Login to obtain `high` and `low-privilege-auth-service-token`-s .
 + Response 400 (application/json; charset=utf-8)
 
             {
-                "error": "`highPrivRoleId` field is not set"
+                "errors":[
+                    {
+                        "type": "badRequest",
+                        "detail": "`highPrivRoleId` field is not set",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "`highPrivRoleId` field is not set",
+                                "meta": {
+                                    "stack":"Error: `highPrivRoleId` field is not set...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
             }
 
 + Response 502
