@@ -22,7 +22,7 @@ parameters:
   env: AWS_DEFAULT_REGION
 outputs:
 - name: component.secrets-service.image
-  brief: Agile Stacks Jenkins docker repository
+  brief: Agile Stacks secret service  docker repository
   fromTfVar: repository_url
 
 templates:
