@@ -5,6 +5,7 @@ const uuidv4 = require('uuid/v4');
 const {pick: lopick} = require('lodash');
 const {api, withToken, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
+const {NotFoundError, BadRequestError, ServerError} = require('../errors');
 
 aws.config = awsConfig();
 const sts = new aws.STS();
@@ -75,9 +76,8 @@ module.exports = {
         const envId = ctx.params.environmentId;
         const secret = lopick(ctx.request.body, allowedFields);
         if (!allowedKinds.some(kind => kind === secret.kind)) {
-            ctx.status = 400;
-            ctx.body = {error: `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret.kind}'`};
-            return;
+            const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret.kind}'`;
+            throw new BadRequestError(error);
         }
         const id = uuidv4();
         if (envId.startsWith('stub-')) {
@@ -86,6 +86,7 @@ module.exports = {
             const path = `/secret/environments/${envId}/secrets/${id}`;
             const resp = await api.put(path, secret, withToken(ctx.vaultToken));
             if (resp.status !== 204) {
+                // TODO: handle this type of errors in common way
                 logger.warn('Unexpected status %d from Vault creating secret `%s` / `%s`: %j',
                     resp.status, path, secret.name, resp.data);
                 ctx.status = proxyErrorStatus(resp);
@@ -102,9 +103,8 @@ module.exports = {
         const envId = ctx.params.environmentId;
         const update = lopick(ctx.request.body, allowedFields);
         if (!allowedKinds.some(kind => kind === update.kind)) {
-            ctx.status = 400;
-            ctx.body = {error: `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${update.kind}'`};
-            return;
+            const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${update.kind}'`;
+            throw new BadRequestError(error);
         }
         if (envId.startsWith('stub-')) {
             const secret = secrets.get(id);
@@ -113,17 +113,17 @@ module.exports = {
                     secrets.set(id, update);
                     ctx.status = 204;
                 } else {
-                    ctx.status = 409;
+                    throw new BadRequestError('Conflict', 409);
                 }
             } else {
-                ctx.status = 404;
+                throw new NotFoundError();
             }
         } else {
             const path = `/secret/environments/${envId}/secrets/${id}`;
             const getResp = await api.get(path, withToken(ctx.vaultToken));
             if (getResp.status !== 200) {
                 if (getResp.status === 404) {
-                    ctx.status = 404;
+                    throw new NotFoundError();
                 } else {
                     logger.warn('Unexpected status %d from Vault reading secret `%s`: %j',
                         getResp.status, path, getResp.data);
@@ -132,8 +132,7 @@ module.exports = {
             } else {
                 const secret = getResp.data;
                 if (secret.kind !== update.kind) {
-                    ctx.status = 409;
-                    ctx.body = {error: 'Secret `kind` doesn\'t match'};
+                    throw new BadRequestError('Secret `kind` doesn\'t match', 409);
                 } else {
                     const putResp = await api.put(path, update, withToken(ctx.vaultToken));
                     if (putResp.status !== 204) {
@@ -152,13 +151,18 @@ module.exports = {
         const id = ctx.params.id;
         const envId = ctx.params.environmentId;
         if (envId.startsWith('stub-')) {
-            ctx.status = secrets.delete(id) ? 204 : 404;
+            const removed = secrets.delete(id);
+            if (removed) {
+                ctx.status = 204;
+            } else {
+                throw new NotFoundError();
+            }
         } else {
             const path = `/secret/environments/${envId}/secrets/${id}`;
             const resp = await api.delete(path, withToken(ctx.vaultToken));
             if (resp.status !== 204) {
                 if (resp.status === 404) {
-                    ctx.status = 404;
+                    throw new NotFoundError();
                 } else {
                     logger.warn('Unexpected status %d from Vault deleting secret `%s`: %j',
                         resp.status, path, resp.data);
@@ -179,14 +183,14 @@ module.exports = {
                 ctx.status = 200;
                 ctx.body = Object.assign({}, secret, {id});
             } else {
-                ctx.status = 404;
+                throw new NotFoundError();
             }
         } else {
             const path = `/secret/environments/${envId}/secrets/${id}`;
             const resp = await api.get(path, withToken(ctx.vaultToken));
             if (resp.status !== 200) {
                 if (resp.status === 404) {
-                    ctx.status = 404;
+                    throw new NotFoundError();
                 } else {
                     logger.warn('Unexpected status %d from Vault reading secret `%s`: %j',
                         resp.status, path, resp.data);
@@ -214,20 +218,17 @@ module.exports = {
                         sessionToken: '...'
                     };
                 } else {
-                    ctx.status = 405;
-                    ctx.body = {
-                        error: 'The requested secret is not `cloudAccount` kind'
-                    };
+                    throw new BadRequestError('The requested secret is not `cloudAccount` kind', 405);
                 }
             } else {
-                ctx.status = 404;
+                throw new NotFoundError();
             }
         } else {
             const path = `/secret/environments/${envId}/secrets/${id}`;
             const resp = await api.get(path, withToken(ctx.vaultToken));
             if (resp.status !== 200) {
                 if (resp.status === 404) {
-                    ctx.status = 404;
+                    throw new NotFoundError();
                 } else {
                     logger.warn('Unexpected status %d from Vault reading secret `%s`: %j',
                         resp.status, path, resp.data);
@@ -236,48 +237,41 @@ module.exports = {
             } else {
                 const secret = resp.data.data;
                 if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
-                    let promise;
+                    let stsReply;
                     if (secret.roleArn) {
                         const purpose = (ctx.request.body && ctx.request.body.purpose) ?
                             ctx.request.body.purpose :
                             'automation';
-                        promise = assumeRole(secret.roleArn, purpose);
+                        try {
+                            stsReply = await assumeRole(secret.roleArn, purpose);
+                        } catch (err) {
+                            const error = `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`;
+                            throw new ServerError(error, {status: 502});
+                        }
                     } else if (secret.accessKey && secret.secretKey) {
-                        promise = getSession(secret.accessKey, secret.secretKey);
+                        try {
+                            stsReply = await getSession(secret.accessKey, secret.secretKey);
+                        } catch (err) {
+                            const error = `AWS STS error opening session for '${maskKey(secret.accessKey)}': ${err}`;
+                            throw new ServerError(error, {status: 502});
+                        }
                     } else {
-                        ctx.status = 405;
-                        ctx.body = {
-                            error: 'The requested secret has no `roleArn`, nor `accessKey` with `secretKey` defined'
-                        };
-                        return;
+                        const error = 'The requested secret has no `roleArn`, nor `accessKey` with `secretKey` defined';
+                        throw new BadRequestError(error, 405);
                     }
-                    // eslint-disable-next-line consistent-return
-                    return promise
-                        .then((stsReply) => {
-                            const creds = stsReply.Credentials;
-                            ctx.status = 200;
-                            ctx.body = {
-                                cloud: 'aws',
-                                accessKey: creds.AccessKeyId,
-                                secretKey: creds.SecretAccessKey,
-                                sessionToken: creds.SessionToken,
-                                ttl: stsTtl
-                            };
-                        })
-                        .catch((err) => {
-                            ctx.status = 502;
-                            ctx.body = {
-                                error: secret.roleArn ?
-                                    `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}` :
-                                    `AWS STS error opening session for '${maskKey(secret.accessKey)}': ${err}`
-                            };
-                        });
-                // eslint-disable-next-line no-else-return
-                } else {
-                    ctx.status = 405;
+
+                    const creds = stsReply.Credentials;
+                    ctx.status = 200;
                     ctx.body = {
-                        error: 'The requested secret is not `cloudAccount:aws` kind'
+                        cloud: 'aws',
+                        accessKey: creds.AccessKeyId,
+                        secretKey: creds.SecretAccessKey,
+                        sessionToken: creds.SessionToken,
+                        ttl: stsTtl
                     };
+                } else {
+                    const error = 'The requested secret is not `cloudAccount:aws` kind';
+                    throw new BadRequestError(error, 405);
                 }
             }
         }

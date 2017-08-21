@@ -11,6 +11,7 @@ module.exports = {
             ctx.status = 200;
             ctx.body = {ttl: resp.data.auth.lease_duration};
         } else {
+            // TODO: handle this type of errors in common way
             logger.warn('Unexpected status %d from Vault during token renewal: %j',
                 resp.status, resp.data);
             ctx.status = proxyErrorStatus(resp);
@@ -22,6 +23,7 @@ module.exports = {
         if (goodStatus(resp)) {
             ctx.status = 204;
         } else {
+            // TODO: handle this type of errors in common way
             logger.warn('Unexpected status %d from Vault during token revocation: %j',
                 resp.status, resp.data);
             ctx.status = proxyErrorStatus(resp);

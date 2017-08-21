@@ -1,5 +1,6 @@
 const {api, goodStatus, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
+const {BadRequestError} = require('../errors');
 
 const knownApps = ['authentication-service', 'automation-hub'];
 
@@ -25,11 +26,9 @@ module.exports = {
         const roleIdHigh = ctx.request.body.highPrivRoleId;
         const roleIdLow = ctx.request.body.lowPrivRoleId;
         if (!known) {
-            ctx.status = 400;
-            ctx.body = {error: `\`${app}\` is not known application`};
+            throw new BadRequestError(`\`${app}\` is not known application`);
         } else if (!roleIdHigh || !roleIdLow) {
-            ctx.status = 400;
-            ctx.body = {error: 'Either `highPrivRoleId` or `lowPrivRoleId` field is not set'};
+            throw new BadRequestError('Either `highPrivRoleId` or `lowPrivRoleId` field is not set');
         } else {
             const {token: highPrivToken, ttl: ttlH, error: errorH} = await loginRole(roleIdHigh);
             const {token: lowPrivToken, ttl: ttlL, error: errorL} = await loginRole(roleIdLow);

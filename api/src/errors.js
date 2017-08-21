@@ -1,3 +1,10 @@
+const errorTypes = {
+    400: 'badRequest',
+    403: 'forbidden',
+    404: 'notFound',
+    500: 'serverError'
+};
+
 class ApiError extends Error {}
 
 class ServerError extends ApiError {
@@ -14,7 +21,7 @@ class ServerError extends ApiError {
 
     toResponse() {
         return [{
-            type: 'serverError',
+            type: errorTypes[this.status] || errorTypes[500],
             source: this.source,
             detail: this.message,
             meta: Object.assign({}, this.meta, {stack: this.stack})
@@ -22,30 +29,22 @@ class ServerError extends ApiError {
     }
 }
 
-class ValidationError extends ApiError {
-    constructor(errors) {
-        super('validation error');
+class BadRequestError extends ApiError {
+    constructor(message = 'Bad Request', status = 400, meta = {}) {
+        super(message);
 
-        this.status = 400;
-        this.errors = errors;
+        this.status = status;
+        this.meta = meta;
     }
 
     toResponse() {
-        return this.errors.map(err => ({
-            type: 'badRequest',
-            source: err.dataPath,
-            detail: err.message,
-            meta: err
-        }));
+        return {
+            type: errorTypes[this.status] || errorTypes[400],
+            detail: this.message,
+            meta: Object.assign({}, this.meta, {stack: this.stack})
+        };
     }
 }
-
-const errorTypes = {
-    400: 'badRequest',
-    403: 'forbidden',
-    404: 'notFound',
-    500: 'serverError'
-};
 
 class ErrorWrapper extends ApiError {
     constructor(error, meta = {}) {
@@ -77,7 +76,7 @@ class ForbiddenError extends ApiError {
 
     toResponse() {
         return [{
-            type: 'forbidden',
+            type: errorTypes[this.status],
             detail: this.message
         }];
     }
@@ -97,7 +96,7 @@ class NotFoundError extends ApiError {
 
     toResponse() {
         return [{
-            type: 'notFound',
+            type: errorTypes[this.status],
             detail: this.message,
             meta: Object.assign({}, this.meta, {stack: this.stack})
         }];
@@ -106,7 +105,7 @@ class NotFoundError extends ApiError {
 
 exports.ApiError = ApiError;
 exports.ServerError = ServerError;
-exports.ValidationError = ValidationError;
+exports.BadRequestError = BadRequestError;
 exports.ErrorWrapper = ErrorWrapper;
 exports.ForbiddenError = ForbiddenError;
 exports.NotFoundError = NotFoundError;

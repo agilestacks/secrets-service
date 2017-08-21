@@ -1,5 +1,6 @@
 const {api, withToken, goodStatus, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
+const {NotFoundError, BadRequestError} = require('../errors');
 
 const users = new Map(); // to save test stubs
 
@@ -29,8 +30,7 @@ module.exports = {
             ctx.status = 201;
             ctx.body = {roleId};
         } else if (!id.startsWith('okta-')) {
-            ctx.status = 400;
-            ctx.body = {error: `User id must start with okta-, got ${id}`};
+            throw new BadRequestError(`User id must start with okta-, got ${id}`);
         } else {
             const rules = tokenPolicyFragment;
             const policyResp = await api.put(`/sys/policy/${id}`, {rules}, withToken(ctx.vaultToken));
@@ -49,6 +49,7 @@ module.exports = {
                         ctx.status = 201;
                         ctx.body = {roleId};
                     } else {
+                        // TODO: handle this type of errors in common way
                         logger.warn('Unexpected status %d from Vault fetching role `%s` role-id: %j',
                             roleIdResp.status, id, roleIdResp.data);
                         ctx.status = proxyErrorStatus(roleIdResp);
@@ -59,6 +60,7 @@ module.exports = {
                     ctx.status = proxyErrorStatus(roleResp);
                 }
             } else {
+                // TODO: handle this type of errors in common way
                 logger.warn('Unexpected status %d from Vault while creating policy `%s`: %j',
                     policyResp.status, id, policyResp.data);
                 ctx.status = proxyErrorStatus(policyResp);
@@ -69,7 +71,12 @@ module.exports = {
     async delete(ctx) {
         const id = ctx.params.id;
         if (id.startsWith('stub-')) {
-            ctx.status = users.delete(id) ? 204 : 404;
+            const deleted = users.delete(id);
+            if (deleted) {
+                ctx.status = 204;
+            } else {
+                throw new NotFoundError();
+            }
         } else {
             const rolePath = `/auth/approle/role/${id}`;
             const roleIdResp = await api.get(`${rolePath}/role-id`, withToken(ctx.vaultToken));
@@ -93,6 +100,7 @@ module.exports = {
                 if (!error) {
                     ctx.status = 204;
                 } else {
+                    // TODO: handle this type of errors in common way
                     ctx.status = proxyErrorStatus(roleDeleteResp);
                 }
             } else {
@@ -106,7 +114,12 @@ module.exports = {
         const environments = ctx.request.body.environments;
         if (environments) {
             if (id.startsWith('stub-')) {
-                ctx.status = users.get(id) ? 204 : 404;
+                const user = users.get(id);
+                if (user) {
+                    ctx.status = 204;
+                } else {
+                    throw new NotFoundError();
+                }
             } else {
                 const policyPath = `/sys/policy/${id}`;
                 const policyResp = await api.get(policyPath, withToken(ctx.vaultToken));
@@ -127,8 +140,7 @@ module.exports = {
                 }
             }
         } else {
-            ctx.status = 400;
-            ctx.body = {error: '`environments` field is not set'};
+            throw new BadRequestError('`environments` field is not set');
         }
     },
 
@@ -145,8 +157,7 @@ module.exports = {
                         ttl: 3600
                     };
                 } else {
-                    ctx.status = 400;
-                    ctx.body = {error: '`roleId` does not match'};
+                    throw new BadRequestError('`roleId` does not match');
                 }
             } else {
                 const respSecretId = await api.post(`/auth/approle/role/${id}/secret-id`, undefined,
@@ -162,19 +173,20 @@ module.exports = {
                             ttl: respLogin.data.auth.lease_duration
                         };
                     } else {
+                        // TODO: handle this type of errors in common way
                         logger.warn('Unexpected status %d from Vault during role `%s` login: %j',
                             respLogin.status, id, respLogin.data);
                         ctx.status = proxyErrorStatus(respLogin);
                     }
                 } else {
+                    // TODO: handle this type of errors in common way
                     logger.warn('Unexpected status %d from Vault while obtaining secret for role `%s`: %j',
                         respSecretId.status, id, respSecretId.data);
                     ctx.status = proxyErrorStatus(respSecretId);
                 }
             }
         } else {
-            ctx.status = 400;
-            ctx.body = {error: '`roleId` field is not set'};
+            throw new BadRequestError('`roleId` field is not set');
         }
     }
 };
