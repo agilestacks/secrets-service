@@ -23,7 +23,6 @@ const allowedFields = [
 
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
 
-// util.promisify() won't work on AWS SDK functions
 function assumeRole(roleName, purpose) {
     const prefix = purpose.substring(0, 57).replace(/[^\w+=,.@-]/g, '-');
     const params = {
