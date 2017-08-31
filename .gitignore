@@ -1,3 +1,4 @@
 api/templates/deployment.yaml
 api/templates/namespace.yaml
 api/templates/service.yaml
+vault-service-roles.yaml
