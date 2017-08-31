@@ -9,7 +9,12 @@ export REGISTRY           ?= $(subst https://,,$(lastword $(shell aws ecr get-lo
 export IMAGE              ?= $(REGISTRY)/agilestacks/$(TF_VAR_name)/secrets-service
 export IMAGE_VERSION      ?= $(shell git rev-parse HEAD | colrm 7)
 export NAMESPACE          ?= automation-hub
-export kubectl            ?= kubectl --context="$(TF_VAR_name).$(TF_VAR_base_domain)" --namespace="$(NAMESPACE)"
+export kubectl            ?= kubectl --context=$(TF_VAR_name).$(TF_VAR_base_domain) --namespace=$(NAMESPACE)
+export VPC_CIDR           ?= 10.0.0.0/16
+
+export VAULT_ADDR         := http://127.0.0.1:8200
+
+VAULT_COMPONENT_SOURCE_DIR ?= ../../components/vault
 
 build:
 	@docker build -t $(IMAGE):$(IMAGE_VERSION) .
@@ -22,13 +27,14 @@ push:
 	docker push $(IMAGE):latest
 .PHONY: push
 
-deploy: build push
+deploy: build push vault-connect policies-deploy vault-disconnect
 	$(kubectl) apply -f templates/namespace.yaml
 	$(kubectl) apply -f templates/service.yaml
 	$(kubectl) apply -f templates/deployment.yaml
+	$(MAKE) output
 .PHONY: deploy
 
-undeploy:
+undeploy: vault-connect policies-undeploy vault-disconnect
 	$(kubectl) delete -f templates/deployment.yaml | true
 	$(kubectl) delete -f templates/service.yaml    | true
 	$(kubectl) delete -f templates/namespace.yaml  | true
@@ -50,6 +56,31 @@ run:
 	@npm start
 .PHONY: run
 
+vault-connect:
+	@cd $(VAULT_COMPONENT_SOURCE_DIR) && $(MAKE) connect auth
+.PHONY: vault-connect
+
+vault-disconnect:
+	cd $(VAULT_COMPONENT_SOURCE_DIR) && $(MAKE) disconnect
+.PHONY: vault-disconnect
+
+policies-deploy:
+	@echo "Bootstrap vault roles"
+	$(SHELL) policies/deploy.sh
+.PHONY: vault-deploy
+
+policies-undeploy:
+	@echo "Bootstrap vault roles"
+	$(SHELL) policies/undeploy.sh
+.PHONY: vault-undeploy
+
+
 vault-test-setup:
 	@bin/vault-test-setup.sh
 .PHONY: vault-test
+
+
+output:
+	@echo Outputs:
+	@echo app_roles_secret=vault-service-roles
+.PHONY: output

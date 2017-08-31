@@ -11,6 +11,10 @@ requires:
 - kubernetes
 
 parameters:
+- name: cloud.vpc.cidr
+  env:  VPC_CIDR
+- name: component.vault.source_dir
+  env:  VAULT_COMPONENT_SOURCE_DIR
 - name: component.secrets-service
   parameters:
   - name: namespace
@@ -38,4 +42,6 @@ outputs:
 - name: component.secrets-service.endpoint
   brief: Secrets Service API endpoint
   value: http://${component.secrets-service.service}.${component.secrets-service.namespace}.svc.cluster.local/api/v1
-
+- name: component.secrets-service.app-roles.secret
+  brief: Name of the secret that has been created with ids of app roles
+  fromTfVar: app_roles_secret
