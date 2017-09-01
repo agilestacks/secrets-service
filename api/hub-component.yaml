@@ -31,6 +31,7 @@ parameters:
 - name: dns.domain
   brief: DNS domain
   kind: tech
+  env: DOMAIN_NAME
 
 templates:
   files: ["templates/*.template"]
