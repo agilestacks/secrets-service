@@ -37,7 +37,6 @@ deploy: build push vault-connect policies-deploy vault-disconnect
 undeploy: vault-connect policies-undeploy vault-disconnect
 	$(kubectl) delete -f templates/deployment.yaml | true
 	$(kubectl) delete -f templates/service.yaml    | true
-	$(kubectl) delete -f templates/namespace.yaml  | true
 .PHONY: undeploy
 
 install:
