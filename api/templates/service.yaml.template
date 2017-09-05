@@ -14,10 +14,6 @@ spec:
     port: 80
     targetPort: 3002
     protocol: TCP
-  - name: legacy
-    port: 3000
-    targetPort: 3002
-    protocol: TCP
   selector:
     provider: agilestacks.com
     project: secrets-service

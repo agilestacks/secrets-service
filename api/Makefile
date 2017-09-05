@@ -66,12 +66,12 @@ vault-disconnect:
 policies-deploy:
 	@echo "Bootstrap vault roles"
 	$(SHELL) policies/deploy.sh
-.PHONY: vault-deploy
+.PHONY: policies-deploy
 
 policies-undeploy:
 	@echo "Bootstrap vault roles"
 	$(SHELL) policies/undeploy.sh
-.PHONY: vault-undeploy
+.PHONY: policies-undeploy
 
 
 vault-test-setup:

@@ -22,6 +22,9 @@ spec:
       - name: api
         image: ${component.secrets-service.image}
         imagePullPolicy: Always
+        env:
+        - name: VAULT_API
+          value: ${component.vault.url}/v1
         ports:
         - name: http
           containerPort: 3002

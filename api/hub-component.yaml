@@ -11,6 +11,7 @@ requires:
 - kubernetes
 
 parameters:
+- name: component.vault.url
 - name: cloud.vpc.cidr
   env:  VPC_CIDR
 - name: component.vault.source_dir

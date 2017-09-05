@@ -23,7 +23,7 @@ for role in authentication-service-high-priv \
             automation-hub-low-priv; do
 
     ${vault} write auth/approle/role/${role} period=60m \
-        bind_secret_id=false bound_cidr_list=127.0.0.0/8,${VPC_CIDR} \
+        bind_secret_id=false bound_cidr_list=127.0.0.0/8,172.17.0.0/16,${VPC_CIDR} \
         policies=${role}
 done
 
