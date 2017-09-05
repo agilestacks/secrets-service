@@ -25,16 +25,18 @@ spec:
         env:
         - name: VAULT_API
           value: ${component.vault.url}/v1
+        - name: SECRETS_PORT
+          value: "80"
         ports:
         - name: http
-          containerPort: 3002
+          containerPort: 80
         readinessProbe:
           httpGet:
             path: /api/v1/ping
-            port: 3002
+            port: 80
         livenessProbe:
           httpGet:
             path: /api/v1/ping
-            port: 3002
+            port: 80
           initialDelaySeconds: 60
           timeoutSeconds: 3

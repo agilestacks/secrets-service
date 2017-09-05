@@ -68,7 +68,7 @@ class ErrorWrapper extends ApiError {
 }
 
 class ForbiddenError extends ApiError {
-    constructor(message = 'Operation is not permitted to current user') {
+    constructor(message = 'Operation is not permitted') {
         super(message);
 
         this.status = 403;
