@@ -12,7 +12,8 @@ export NAMESPACE          ?= automation-hub
 export kubectl            ?= kubectl --context=$(TF_VAR_name).$(TF_VAR_base_domain) --namespace=$(NAMESPACE)
 export VPC_CIDR           ?= 10.0.0.0/16
 
-export VAULT_ADDR         := http://127.0.0.1:8200
+export VAULT_LOCAL_PORT   := 31321
+export VAULT_ADDR         := http://127.0.0.1:$(VAULT_LOCAL_PORT)
 
 VAULT_COMPONENT_SOURCE_DIR ?= ../../components/vault
 
