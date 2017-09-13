@@ -11,6 +11,6 @@ data "aws_region" "current" {
 
 module "ecr" {
   source = "github.com/agilestacks/terraform-modules//ecr"
-  name   = "agilestacks/${var.name}/secrets-service"
+  name   = "agilestacks/${var.name}.${var.base_domain}/secrets-service"
 }
 
