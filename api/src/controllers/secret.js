@@ -13,8 +13,6 @@ const stsTtl = 3600;
 
 const stubSecrets = new Map();
 
-let apiPrefix = '';
-
 const allowedKinds = ['password', 'cloudAccount'];
 const allowedFields = [
     'name', 'kind',
@@ -75,10 +73,6 @@ function secretEntityId(ctx) {
 }
 
 module.exports = {
-    setApiPrefix(prefix) {
-        apiPrefix = prefix;
-    },
-
     async create(ctx) {
         const {entityId, entityKind} = secretEntityId(ctx);
         const secret = lopick(ctx.request.body, allowedFields);
@@ -100,7 +94,7 @@ module.exports = {
             }
         }
         ctx.status = 201;
-        ctx.set('Location', `${apiPrefix}/${entityKind}/${entityId}/secrets/${id}`);
+        ctx.set('Location', `${ctx.path}/${id}`);
         ctx.body = {id};
     },
 

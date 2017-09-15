@@ -12,8 +12,6 @@ const secretC = require('./controllers/secret');
 const appC = require('./controllers/app');
 const tokenC = require('./controllers/token');
 
-secretC.setApiPrefix(apiPrefix);
-
 const app = new Koa();
 
 const routerConf = {
