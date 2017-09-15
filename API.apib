@@ -11,6 +11,9 @@ Secrets Service has protected HTTP API to provide access to all it's functions, 
 
 Please read [design](https://github.com/agilestacks/secrets-service/blob/master/README.md) first.
 
+There are two types of resources: Environments under `/environments` and Cloud Accounts under `/cloud-accounts`.
+Both supports same kind of secrets and operations, so if you see `/environments` the same call format works
+for `/cloud-accounts` too.
 
 ## Secret [/environments/{environmentId}/secrets/{secretId}]
 
@@ -436,7 +439,7 @@ Put a list of `cloudAccountId`-s the user has access to.
 
     + Headers
 
-            X-Secrets-Token: high-privilege-automation-hub-token
+            X-Secrets-Token: high-privilege-automation-hub-token | high-privilege-auth-service-token
 
     + Body
 
