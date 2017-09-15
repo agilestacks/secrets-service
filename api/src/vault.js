@@ -14,11 +14,16 @@ module.exports = {
         return {headers: {'X-Vault-Token': token}};
     },
 
-    goodStatus(response) {
-        return [200, 201, 204].some(good => good === response.status);
+    goodStatus(...responses) {
+        return responses.every(response => [200, 201, 204].some(good => good === response.status));
     },
 
-    proxyErrorStatus(response) {
-        return response.status === 403 || response.status === 404 ? response.status : 502;
+    proxyErrorStatus(...responses) {
+        const http40x = r => r.status === 403 || r.status === 404;
+        return responses.some(http40x) ? responses.find(http40x).status : 502;
+    },
+
+    printBadResponses(print, format, id, ...responses) {
+        responses.filter(r => !module.exports.goodStatus(r)).forEach(r => print(format, r.status, id, r.data));
     }
 };
