@@ -11,7 +11,7 @@ aws.config = awsConfig();
 const sts = new aws.STS();
 const stsTtl = 3600;
 
-const secrets = new Map();
+const stubSecrets = new Map();
 
 let apiPrefix = '';
 
@@ -53,7 +53,7 @@ function maskRole(roleArn) {
 }
 
 function maskKey(key) {
-    const truncAt = key.startsWith('AKIA') ? 8 : 4;
+    const truncAt = key.startsWith('AK') ? 8 : 4;
     return key.substring(0, truncAt).padEnd(key.length, '*');
 }
 
@@ -67,26 +67,32 @@ function maskSecret(secret) {
     return masked;
 }
 
+function secretEntityId(ctx) {
+    const {params: {environmentId, cloudAccountId}} = ctx;
+    if (environmentId && !cloudAccountId) return {entityId: environmentId, entityKind: 'environments'};
+    if (!environmentId && cloudAccountId) return {entityId: cloudAccountId, entityKind: 'cloud-accounts'};
+    throw new ServerError('Too many parameters', {meta: ctx.params});
+}
+
 module.exports = {
     setApiPrefix(prefix) {
         apiPrefix = prefix;
     },
 
     async create(ctx) {
-        const envId = ctx.params.environmentId;
+        const {entityId, entityKind} = secretEntityId(ctx);
         const secret = lopick(ctx.request.body, allowedFields);
         if (!allowedKinds.some(kind => kind === secret.kind)) {
             const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret.kind}'`;
             throw new BadRequestError(error);
         }
         const id = uuidv4();
-        if (envId.startsWith('stub-')) {
-            secrets.set(id, secret);
+        if (entityId.startsWith('stub-')) {
+            stubSecrets.set(id, secret);
         } else {
-            const path = `/secret/environments/${envId}/secrets/${id}`;
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
             const resp = await api.put(path, secret, withToken(ctx.vaultToken));
             if (resp.status !== 204) {
-                // TODO: handle this type of errors in common way
                 logger.warn('Unexpected status %d from Vault creating secret `%s` / `%s`: %j',
                     resp.status, path, secret.name, resp.data);
                 ctx.status = proxyErrorStatus(resp);
@@ -94,23 +100,23 @@ module.exports = {
             }
         }
         ctx.status = 201;
-        ctx.set('Location', `${apiPrefix}/environments/${envId}/secrets/${id}`);
+        ctx.set('Location', `${apiPrefix}/${entityKind}/${entityId}/secrets/${id}`);
         ctx.body = {id};
     },
 
     async update(ctx) {
+        const {entityId, entityKind} = secretEntityId(ctx);
         const id = ctx.params.id;
-        const envId = ctx.params.environmentId;
         const update = lopick(ctx.request.body, allowedFields);
         if (!allowedKinds.some(kind => kind === update.kind)) {
             const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${update.kind}'`;
             throw new BadRequestError(error);
         }
-        if (envId.startsWith('stub-')) {
-            const secret = secrets.get(id);
+        if (entityId.startsWith('stub-')) {
+            const secret = stubSecrets.get(id);
             if (secret) {
                 if (secret.kind === update.kind) {
-                    secrets.set(id, update);
+                    stubSecrets.set(id, update);
                     ctx.status = 204;
                 } else {
                     throw new BadRequestError('Conflict', 409);
@@ -119,8 +125,9 @@ module.exports = {
                 throw new NotFoundError();
             }
         } else {
-            const path = `/secret/environments/${envId}/secrets/${id}`;
-            const getResp = await api.get(path, withToken(ctx.vaultToken));
+            const wvt = withToken(ctx.vaultToken);
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const getResp = await api.get(path, wvt);
             if (getResp.status !== 200) {
                 if (getResp.status === 404) {
                     throw new NotFoundError();
@@ -134,7 +141,7 @@ module.exports = {
                 if (secret.kind !== update.kind) {
                     throw new BadRequestError('Secret `kind` doesn\'t match', 409);
                 } else {
-                    const putResp = await api.put(path, update, withToken(ctx.vaultToken));
+                    const putResp = await api.put(path, update, wvt);
                     if (putResp.status !== 204) {
                         logger.warn('Unexpected status %d from Vault updating secret `%s` / `%s`: %j',
                             putResp.status, path, update.name, putResp.data);
@@ -148,18 +155,19 @@ module.exports = {
     },
 
     async delete(ctx) {
+        const {entityId, entityKind} = secretEntityId(ctx);
         const id = ctx.params.id;
-        const envId = ctx.params.environmentId;
-        if (envId.startsWith('stub-')) {
-            const removed = secrets.delete(id);
+        if (entityId.startsWith('stub-')) {
+            const removed = stubSecrets.delete(id);
             if (removed) {
                 ctx.status = 204;
             } else {
                 throw new NotFoundError();
             }
         } else {
-            const path = `/secret/environments/${envId}/secrets/${id}`;
-            const resp = await api.delete(path, withToken(ctx.vaultToken));
+            const wvt = withToken(ctx.vaultToken);
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const resp = await api.delete(path, wvt);
             if (resp.status !== 204) {
                 if (resp.status === 404) {
                     throw new NotFoundError();
@@ -175,10 +183,10 @@ module.exports = {
     },
 
     async get(ctx) {
+        const {entityId, entityKind} = secretEntityId(ctx);
         const id = ctx.params.id;
-        const envId = ctx.params.environmentId;
-        if (envId.startsWith('stub-')) {
-            const secret = secrets.get(id);
+        if (entityId.startsWith('stub-')) {
+            const secret = stubSecrets.get(id);
             if (secret) {
                 ctx.status = 200;
                 ctx.body = Object.assign({}, secret, {id});
@@ -186,8 +194,9 @@ module.exports = {
                 throw new NotFoundError();
             }
         } else {
-            const path = `/secret/environments/${envId}/secrets/${id}`;
-            const resp = await api.get(path, withToken(ctx.vaultToken));
+            const wvt = withToken(ctx.vaultToken);
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const resp = await api.get(path, wvt);
             if (resp.status !== 200) {
                 if (resp.status === 404) {
                     throw new NotFoundError();
@@ -204,10 +213,10 @@ module.exports = {
     },
 
     async sessionKeys(ctx) {
+        const {entityId, entityKind} = secretEntityId(ctx);
         const id = ctx.params.id;
-        const envId = ctx.params.environmentId;
-        if (envId.startsWith('stub-')) {
-            const secret = secrets.get(id);
+        if (entityId.startsWith('stub-')) {
+            const secret = stubSecrets.get(id);
             if (secret) {
                 if (secret.kind === 'cloudAccount') {
                     ctx.status = 200;
@@ -224,7 +233,7 @@ module.exports = {
                 throw new NotFoundError();
             }
         } else {
-            const path = `/secret/environments/${envId}/secrets/${id}`;
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
             const resp = await api.get(path, withToken(ctx.vaultToken));
             if (resp.status !== 200) {
                 if (resp.status === 404) {

@@ -211,6 +211,8 @@ describe('secrets', () => {
     let apiV1serviceLow;
     let apiV1user;
 
+    const paths = ['/environments/env-1/secrets', '/cloud-accounts/clacc-1/secrets'];
+
     const setupApi = async () => {
         const loginResp = await apiV1open.post(authServiceLoginPath,
             serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
@@ -224,8 +226,8 @@ describe('secrets', () => {
         const user = `/users/okta-${randomSuf()}`;
         const putResp = await apiV1serviceHigh.put(user);
         const roleId = putResp.data.roleId;
-        // eslint-disable-next-line no-unused-vars
-        const putEnvResp = await apiV1serviceHigh.put(`${user}/environments`, {environments: ['env-1']});
+        await apiV1serviceHigh.put(`${user}/environments`, {environments: ['env-1']});
+        await apiV1serviceHigh.put(`${user}/cloud-accounts`, {cloudAccounts: ['clacc-1']});
         const userLoginResp = await apiV1serviceLow.post(`${user}/login`, {roleId});
         const tokenUser = userLoginResp.data.token;
 
@@ -234,147 +236,151 @@ describe('secrets', () => {
 
     beforeAll(setupApi);
 
-    test('create, get, update, delete - password', async () => {
-        expect.assertions(8);
+    test('create, get, update, delete - password', () => {
+        expect.assertions(16);
 
-        const path = '/environments/env-1/secrets';
-        const secret = {
-            name: 'component.postgresql.password',
-            kind: 'password',
-            username: 'automation-hub',
-            password: 'jai0eite3X'
-        };
+        return Promise.all(paths.map(async (path) => {
+            const secret = {
+                name: 'component.postgresql.password',
+                kind: 'password',
+                username: 'automation-hub',
+                password: `jai0eite3X${path}`
+            };
 
-        const postResp = await apiV1user.post(path, secret);
-        expect(postResp.status).toBe(201);
-        expect(postResp.headers.location).toBeDefined();
-        expect(postResp.data.id).toBeDefined();
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
 
-        const id = postResp.data.id;
-        const location = postResp.headers.location;
-        expect(location).toBe(`${apiPrefix}${path}/${id}`);
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
 
-        const getResp = await apiV1user.get(`${path}/${id}`);
-        expect(getResp.status).toBe(200);
-        expect(getResp.data).toEqual(Object.assign({}, secret, {id}));
+            const getResp = await apiV1user.get(`${path}/${id}`);
+            expect(getResp.status).toBe(200);
+            expect(getResp.data).toEqual(Object.assign({}, secret, {id}));
 
-        const deleteResp = await apiV1user.delete(`${path}/${id}`);
-        expect(deleteResp.status).toBe(204);
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
 
-        const getNoneResp = await apiV1user.get(`${path}/${id}`);
-        expect(getNoneResp.status).toBe(404);
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
     });
 
-    test('cloud account - mask', async () => {
-        expect.assertions(14);
+    test('cloud account - mask', () => {
+        expect.assertions(28);
 
-        const path = '/environments/env-1/secrets';
-        const secret = {
-            name: 'customer.account',
-            kind: 'cloudAccount',
-            cloud: 'aws',
-            roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution',
-            accessKey: 'AKIAJWMTY___________',
-            secretKey: '3SaIOZR1________________________________'
-        };
+        return Promise.all(paths.map(async (path) => {
+            const secret = {
+                name: 'customer.account',
+                kind: 'cloudAccount',
+                cloud: 'aws',
+                roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution',
+                accessKey: 'AKIAJWMTY___________',
+                secretKey: '3SaIOZR1________________________________'
+            };
 
-        const postResp = await apiV1user.post(path, secret);
-        expect(postResp.status).toBe(201);
-        expect(postResp.headers.location).toBeDefined();
-        expect(postResp.data.id).toBeDefined();
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
 
-        const id = postResp.data.id;
-        const location = postResp.headers.location;
-        expect(location).toBe(`${apiPrefix}${path}/${id}`);
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
 
-        const getResp = await apiV1user.get(`${path}/${id}`);
-        expect(getResp.status).toBe(200);
-        expect(getResp.data.id).toBe(id);
-        expect(getResp.data.name).toBe(secret.name);
-        expect(getResp.data.kind).toBe(secret.kind);
-        expect(getResp.data.cloud).toBe(secret.cloud);
-        expect(getResp.data.roleArn).toBe('arn:aws:iam::973998981304:role/lamb******************');
-        expect(getResp.data.accessKey).toBe('AKIAJWMT************');
-        expect(getResp.data.secretKey).toBe('3SaI************************************');
+            const getResp = await apiV1user.get(`${path}/${id}`);
+            expect(getResp.status).toBe(200);
+            expect(getResp.data.id).toBe(id);
+            expect(getResp.data.name).toBe(secret.name);
+            expect(getResp.data.kind).toBe(secret.kind);
+            expect(getResp.data.cloud).toBe(secret.cloud);
+            expect(getResp.data.roleArn).toBe('arn:aws:iam::973998981304:role/lamb******************');
+            expect(getResp.data.accessKey).toBe('AKIAJWMT************');
+            expect(getResp.data.secretKey).toBe('3SaI************************************');
 
-        const deleteResp = await apiV1user.delete(`${path}/${id}`);
-        expect(deleteResp.status).toBe(204);
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
 
-        const getNoneResp = await apiV1user.get(`${path}/${id}`);
-        expect(getNoneResp.status).toBe(404);
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
     });
 
-    test('session token - role', async () => {
-        expect.assertions(12);
+    test('session token - role', () => {
+        expect.assertions(24);
 
-        const path = '/environments/env-1/secrets';
-        const secret = {
-            name: 'customer.role',
-            kind: 'cloudAccount',
-            cloud: 'aws',
-            roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution'
-        };
+        return Promise.all(paths.map(async (path) => {
+            const secret = {
+                name: 'customer.role',
+                kind: 'cloudAccount',
+                cloud: 'aws',
+                roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution'
+            };
 
-        const postResp = await apiV1user.post(path, secret);
-        expect(postResp.status).toBe(201);
-        expect(postResp.headers.location).toBeDefined();
-        expect(postResp.data.id).toBeDefined();
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
 
-        const id = postResp.data.id;
-        const location = postResp.headers.location;
-        expect(location).toBe(`${apiPrefix}${path}/${id}`);
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
 
-        const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
-            {purpose: 'secrets service test'});
-        expect(keysResp.status).toBe(200);
-        expect(keysResp.data.cloud).toBeDefined();
-        expect(keysResp.data.accessKey).toBeDefined();
-        expect(keysResp.data.secretKey).toBeDefined();
-        expect(keysResp.data.sessionToken).toBeDefined();
-        expect(keysResp.data.ttl).toBeDefined();
+            const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
+                {purpose: 'secrets service test'});
+            expect(keysResp.status).toBe(200);
+            expect(keysResp.data.cloud).toBeDefined();
+            expect(keysResp.data.accessKey).toBeDefined();
+            expect(keysResp.data.secretKey).toBeDefined();
+            expect(keysResp.data.sessionToken).toBeDefined();
+            expect(keysResp.data.ttl).toBeDefined();
 
-        const deleteResp = await apiV1user.delete(`${path}/${id}`);
-        expect(deleteResp.status).toBe(204);
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
 
-        const getNoneResp = await apiV1user.get(`${path}/${id}`);
-        expect(getNoneResp.status).toBe(404);
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
     });
 
-    test.skip('session token - keys', async () => {
-        expect.assertions(12);
+    test.skip('session token - keys', () => {
+        expect.assertions(24);
 
-        const path = '/environments/env-1/secrets';
-        const secret = {
-            name: 'customer.keys',
-            kind: 'cloudAccount',
-            cloud: 'aws',
-            accessKey: '',
-            secretKey: ''
-        };
+        return Promise.all(paths.map(async (path) => {
+            const secret = {
+                name: 'customer.keys',
+                kind: 'cloudAccount',
+                cloud: 'aws',
+                accessKey: '',
+                secretKey: ''
+            };
 
-        const postResp = await apiV1user.post(path, secret);
-        expect(postResp.status).toBe(201);
-        expect(postResp.headers.location).toBeDefined();
-        expect(postResp.data.id).toBeDefined();
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
 
-        const id = postResp.data.id;
-        const location = postResp.headers.location;
-        expect(location).toBe(`${apiPrefix}${path}/${id}`);
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
 
-        const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
-            {purpose: 'secrets service test'});
-        expect(keysResp.status).toBe(200);
-        expect(keysResp.data.cloud).toBeDefined();
-        expect(keysResp.data.accessKey).toBeDefined();
-        expect(keysResp.data.secretKey).toBeDefined();
-        expect(keysResp.data.sessionToken).toBeDefined();
-        expect(keysResp.data.ttl).toBeDefined();
+            const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
+                {purpose: 'secrets service test'});
+            expect(keysResp.status).toBe(200);
+            expect(keysResp.data.cloud).toBeDefined();
+            expect(keysResp.data.accessKey).toBeDefined();
+            expect(keysResp.data.secretKey).toBeDefined();
+            expect(keysResp.data.sessionToken).toBeDefined();
+            expect(keysResp.data.ttl).toBeDefined();
 
-        const deleteResp = await apiV1user.delete(`${path}/${id}`);
-        expect(deleteResp.status).toBe(204);
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
 
-        const getNoneResp = await apiV1user.get(`${path}/${id}`);
-        expect(getNoneResp.status).toBe(404);
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
     });
 
     // hope it is the last test to execute
