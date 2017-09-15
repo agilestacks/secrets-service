@@ -425,6 +425,55 @@ Put a list of `environmentId`-s the user has access to.
 + Response 504
 
 
+### Update User Cloud Account access [PUT /users/{userId}/cloud-accounts]
+
+Put a list of `cloudAccountId`-s the user has access to.
+
++ Parameters
+    + userId: `okta-00ub0oNGTSWTBKOLGLNR` (string) - ID of the User
+
++ Request (application/json; charset=utf-8)
+
+    + Headers
+
+            X-Secrets-Token: high-privilege-automation-hub-token
+
+    + Body
+
+            {
+                "cloudAccounts": ["cloud account id 1", "cloud account id 2"]
+            }
+
++ Response 204
+
++ Response 404
+
++ Response 403
+
++ Response 400 (application/json; charset=utf-8)
+
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "`cloudAccounts` field is not set",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "`cloudAccounts` field is not set",
+                                "meta": {
+                                    "stack":"Error: `cloudAccounts` field is not set...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+
++ Response 502
+
++ Response 504
+
+
 ### Login User to obtain Secrets Token [POST /users/{userId}/login]
 
 Login to obtain `user-token`.

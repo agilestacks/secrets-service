@@ -30,6 +30,7 @@ publicRouter.get('/version', versionC.get);
 router.put('/users/:id', userC.create);
 router.del('/users/:id', userC.delete);
 router.put('/users/:id/environments', userC.environments);
+router.put('/users/:id/cloud-accounts', userC.cloudAccounts);
 router.post('/users/:id/login', userC.login);
 
 publicRouter.post('/apps/:id/login', appC.login);

@@ -114,20 +114,81 @@ describe('users', () => {
         expect(deleteResp.status).toBe(204);
     });
 
+    test('environments no access', async () => {
+        expect.assertions(4);
+
+        const path = '/users/okta-4';
+
+        const putResp = await apiV1serviceHigh.put(path);
+        expect(putResp.status).toBe(201);
+        expect(putResp.data.roleId).toBeDefined();
+
+        const environments = {environments: []};
+        const envPutResp = await apiV1serviceHigh.put(`${path}/environments`, environments);
+        expect(envPutResp.status).toBe(204);
+
+        const deleteResp = await apiV1serviceHigh.delete(path);
+        expect(deleteResp.status).toBe(204);
+    });
+
+    test('cloud-accounts', async () => {
+        expect.assertions(4);
+
+        const path = '/users/okta-5';
+
+        const putResp = await apiV1serviceHigh.put(path);
+        expect(putResp.status).toBe(201);
+        expect(putResp.data.roleId).toBeDefined();
+
+        const cloudAccounts = {cloudAccounts: ['clacc-1', 'clacc-2']};
+        const envPutResp = await apiV1serviceHigh.put(`${path}/cloud-accounts`, cloudAccounts);
+        expect(envPutResp.status).toBe(204);
+
+        const deleteResp = await apiV1serviceHigh.delete(path);
+        expect(deleteResp.status).toBe(204);
+    });
+
+    test('cloud-accounts no access', async () => {
+        expect.assertions(4);
+
+        const path = '/users/okta-6';
+
+        const putResp = await apiV1serviceHigh.put(path);
+        expect(putResp.status).toBe(201);
+        expect(putResp.data.roleId).toBeDefined();
+
+        const cloudAccounts = {cloudAccounts: []};
+        const envPutResp = await apiV1serviceHigh.put(`${path}/cloud-accounts`, cloudAccounts);
+        expect(envPutResp.status).toBe(204);
+
+        const deleteResp = await apiV1serviceHigh.delete(path);
+        expect(deleteResp.status).toBe(204);
+    });
+
     test('environments for non-existent', async () => {
         expect.assertions(1);
 
-        const path = '/users/okta-4';
+        const path = '/users/okta-7';
 
         const environments = {environments: []};
         const envPutResp = await apiV1serviceHigh.put(`${path}/environments`, environments);
         expect(envPutResp.status).toBe(404);
     });
 
+    test('cloud-accounts for non-existent', async () => {
+        expect.assertions(1);
+
+        const path = '/users/okta-8';
+
+        const cloudAccounts = {cloudAccounts: []};
+        const envPutResp = await apiV1serviceHigh.put(`${path}/cloud-accounts`, cloudAccounts);
+        expect(envPutResp.status).toBe(404);
+    });
+
     test('login', async () => {
         expect.assertions(6);
 
-        const path = '/users/okta-5';
+        const path = '/users/okta-9';
 
         const putResp = await apiV1serviceHigh.put(path);
         expect(putResp.status).toBe(201);
