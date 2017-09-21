@@ -10,13 +10,16 @@ kubectl=${kubectl:-kubectl --namespace=$NAMESPACE}
 
 VPC_CIDR=${VPC_CIDR:-10.0.0.0/16}
 
+# Creating Policies
 ${vault} write sys/policy/authentication-service-high-priv rules=@${cwd}/policy-auth-high.hcl
 ${vault} write sys/policy/authentication-service-low-priv  rules=@${cwd}/policy-auth-low.hcl
 ${vault} write sys/policy/automation-hub-high-priv         rules=@${cwd}/policy-hub-high.hcl
 ${vault} write sys/policy/automation-hub-low-priv          rules=@${cwd}/policy-hub-low.hcl
+
+# Enable AppRole authentication
 ${vault} auth-enable approle | true
 
-# $vault auth-enable approle
+# Create a roles
 for role in authentication-service-high-priv \
             authentication-service-low-priv \
             automation-hub-high-priv \
@@ -27,6 +30,7 @@ for role in authentication-service-high-priv \
         policies=${role}
 done
 
+# Fetch the RoleID of the AppRole
 role_id_high_priv_auth=$(${vault} read -format=json auth/approle/role/authentication-service-high-priv/role-id |jq -Mr .data.role_id | base64)
 role_id_low_priv_auth=$(${vault} read -format=json auth/approle/role/authentication-service-low-priv/role-id |jq -Mr .data.role_id | base64)
 role_id_high_priv_hub=$(${vault} read -format=json auth/approle/role/automation-hub-high-priv/role-id |jq -Mr .data.role_id | base64)

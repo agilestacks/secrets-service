@@ -75,9 +75,15 @@ module.exports = {
             throw new BadRequestError(`User id must start with okta-, got ${id}`);
         } else {
             const wvt = withToken(ctx.vaultToken);
-            const tokenPolicyResp = await api.put(`/sys/policy/${id}-tokens`, {rules: tokenPolicy}, wvt);
-            const envPolicyResp = await api.put(`/sys/policy/${id}-environments`, {rules: '#'}, wvt);
-            const claccPolicyResp = await api.put(`/sys/policy/${id}-cloud-accounts`, {rules: '#'}, wvt);
+            const tokenPolicyResp = await api.put(`/sys/policy/${id}-tokens`, {
+                rules: tokenPolicy
+            }, wvt);
+            const envPolicyResp = await api.put(`/sys/policy/${id}-environments`, {
+                rules: '#'
+            }, wvt);
+            const claccPolicyResp = await api.put(`/sys/policy/${id}-cloud-accounts`, {
+                rules: '#'
+            }, wvt);
             if (goodStatus(tokenPolicyResp, envPolicyResp, claccPolicyResp)) {
                 const rolePath = `/auth/approle/role/${id}`;
                 const role = {
@@ -124,27 +130,27 @@ module.exports = {
             const rolePath = `/auth/approle/role/${id}`;
             const roleIdResp = await api.get(`${rolePath}/role-id`, wvt);
             if (roleIdResp.status === 200) {
-                let error = false;
-
                 const roleDeleteResp = await api.delete(rolePath, wvt);
-                if (roleDeleteResp.status !== 204) {
+                if (roleDeleteResp.status === 204) {
+                    const tokenPolicyDelResp = await api.delete(`/sys/policy/${id}-tokens`, wvt);
+                    const envPolicyDelResp = await api.delete(`/sys/policy/${id}-environments`, wvt);
+                    const claccPolicyDelResp = await api.delete(`/sys/policy/${id}-cloud-accounts`, wvt);
+
+                    if (goodStatus(tokenPolicyDelResp, envPolicyDelResp, claccPolicyDelResp)) {
+                        ctx.status = 204;
+                    } else {
+                        printBadResponses(
+                            logger.warn,
+                            'Unexpected status %d from Vault while deleting policies for `%s`: %j',
+                            id, tokenPolicyDelResp, envPolicyDelResp, claccPolicyDelResp
+                        );
+                        // TODO: handle this type of errors in common way
+                        ctx.status = proxyErrorStatus(tokenPolicyDelResp, envPolicyDelResp, claccPolicyDelResp);
+                    }
+                } else {
                     logger.warn('Unexpected status %d from Vault while deleting role `%s`: %j',
                         roleDeleteResp.status, id, roleDeleteResp.data);
-                    error = true;
-                }
-
-                const policyDeleteResp = await api.delete(`/sys/policy/${id}`, wvt);
-                if (policyDeleteResp.status !== 204) {
-                    logger.warn('Unexpected status %d from Vault while deleting policy `%s`: %j',
-                        policyDeleteResp.status, id, policyDeleteResp.data);
-                    error = true;
-                }
-
-                if (!error) {
-                    ctx.status = 204;
-                } else {
-                    // TODO: handle this type of errors in common way
-                    ctx.status = proxyErrorStatus(roleDeleteResp);
+                    ctx.status = roleDeleteResp.status;
                 }
             } else {
                 ctx.status = roleIdResp.status;
