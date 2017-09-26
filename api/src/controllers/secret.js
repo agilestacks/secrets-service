@@ -13,10 +13,14 @@ const stsTtl = 3600;
 
 const stubSecrets = new Map();
 
-const allowedKinds = ['password', 'cloudAccount'];
+const allowedKinds = [
+    'password', 'cloudAccount', 'cloudAccessKeys', 'caPrivateKey',
+    'certificate', 'sshKey', 'usernamePassword', 'text'
+];
 const allowedFields = [
     'name', 'kind',
     'username', 'password',
+    'certificate', 'sshKey', 'caKey', 'text',
     'cloud', 'accessKey', 'secretKey', 'roleArn'
 ];
 
