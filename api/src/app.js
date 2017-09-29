@@ -29,21 +29,14 @@ publicRouter.post('/apps/:id/login', appC.login);
 
 router.put('/users/:id', userC.create);
 router.del('/users/:id', userC.delete);
-router.put('/users/:id/environments', userC.environments);
-router.put('/users/:id/cloud-accounts', userC.cloudAccounts);
+router.put('/users/:id/:entityKind', userC.update);
 router.post('/users/:id/login', userC.login);
 
-router.post('/environments/:environmentId/secrets', secretC.create);
-router.put('/environments/:environmentId/secrets/:id', secretC.update);
-router.get('/environments/:environmentId/secrets/:id', secretC.get);
-router.del('/environments/:environmentId/secrets/:id', secretC.delete);
-router.post('/environments/:environmentId/secrets/:id/session-keys', secretC.sessionKeys);
-
-router.post('/cloud-accounts/:cloudAccountId/secrets', secretC.create);
-router.put('/cloud-accounts/:cloudAccountId/secrets/:id', secretC.update);
-router.get('/cloud-accounts/:cloudAccountId/secrets/:id', secretC.get);
-router.del('/cloud-accounts/:cloudAccountId/secrets/:id', secretC.delete);
-router.post('/cloud-accounts/:cloudAccountId/secrets/:id/session-keys', secretC.sessionKeys);
+router.post('/secrets/:entityKind/:entityId', secretC.create);
+router.put('/secrets/:entityKind/:entityId/:id', secretC.update);
+router.get('/secrets/:entityKind/:entityId/:id', secretC.get);
+router.del('/secrets/:entityKind/:entityId/:id', secretC.delete);
+router.post('/secrets/:entityKind/:entityId/:id/session-keys', secretC.sessionKeys);
 
 router.post('/tokens/renew', tokenC.renew);
 router.post('/tokens/revoke', tokenC.revoke);

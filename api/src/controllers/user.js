@@ -5,14 +5,8 @@ const {NotFoundError, BadRequestError} = require('../errors');
 
 const stubUsers = new Map(); // Jest tests
 
-const environmentPolicyFragment = `
-path "secret/environments/{{id}}/*" {
-  capabilities = ["create", "read", "update", "delete", "list"]
-}
-`;
-
-const cloudAccountPolicyFragment = `
-path "secret/cloud-accounts/{{id}}/*" {
+const policyTemplate = `
+path "secret/{{entityKind}}/{{id}}/*" {
   capabilities = ["create", "read", "update", "delete", "list"]
 }
 `;
@@ -27,40 +21,7 @@ path "auth/token/revoke-self" {
 }
 `;
 
-async function updatePolicy(ctx, entity, template) {
-    const id = ctx.params.id;
-    const entityCamelCase = camelCase(entity);
-    const list = ctx.request.body[entityCamelCase];
-    if (list) {
-        if (id.startsWith('stub-')) {
-            const user = stubUsers.get(id);
-            if (user) {
-                ctx.status = 204;
-            } else {
-                throw new NotFoundError();
-            }
-        } else {
-            const wvt = withToken(ctx.vaultToken);
-            const policyPath = `/sys/policy/${id}-${entity}`;
-            const policyResp = await api.get(policyPath, wvt);
-            if (policyResp.status === 200) {
-                const policyRules = list.map(eId => template.replace('{{id}}', eId)).join('\n');
-                const policyPutResp = await api.put(policyPath, {rules: policyRules || '#'}, wvt);
-                if (goodStatus(policyPutResp)) {
-                    ctx.status = 204;
-                } else {
-                    logger.warn('Unexpected status %d from Vault while updating policy `%s-%s`: %j',
-                        policyResp.status, id, entity, policyPutResp.data);
-                    ctx.status = proxyErrorStatus(policyPutResp);
-                }
-            } else {
-                ctx.status = policyResp.status;
-            }
-        }
-    } else {
-        throw new BadRequestError(`'${entityCamelCase}' field is not set`);
-    }
-}
+const entities = ['environments', 'cloud-accounts', 'licenses'];
 
 module.exports = {
     async create(ctx) {
@@ -75,21 +36,23 @@ module.exports = {
             throw new BadRequestError(`User id must start with okta-, got ${id}`);
         } else {
             const wvt = withToken(ctx.vaultToken);
+
             const tokenPolicyResp = await api.put(`/sys/policy/${id}-tokens`, {
                 rules: tokenPolicy
             }, wvt);
-            const envPolicyResp = await api.put(`/sys/policy/${id}-environments`, {
-                rules: '#'
-            }, wvt);
-            const claccPolicyResp = await api.put(`/sys/policy/${id}-cloud-accounts`, {
-                rules: '#'
-            }, wvt);
-            if (goodStatus(tokenPolicyResp, envPolicyResp, claccPolicyResp)) {
+
+            const policies = entities.map(entity => `${id}-${entity}`);
+
+            const policiesResp = await Promise.all(policies
+                .map(policy => api.put(`/sys/policy/${policy}`, {rules: '#'}, wvt))
+            );
+
+            if (goodStatus(tokenPolicyResp, ...policiesResp)) {
                 const rolePath = `/auth/approle/role/${id}`;
                 const role = {
                     period: 3600,
                     bind_secret_id: true,
-                    policies: [`${id}-tokens`, `${id}-environments`, `${id}-cloud-accounts`]
+                    policies
                 };
                 const roleResp = await api.post(rolePath, role, wvt);
                 if (goodStatus(roleResp)) {
@@ -99,19 +62,26 @@ module.exports = {
                         ctx.status = 201;
                         ctx.body = {roleId};
                     } else {
-                        logger.warn('Unexpected status %d from Vault fetching role `%s` role-id: %j',
-                            roleIdResp.status, id, roleIdResp.data);
+                        logger.warn(
+                            'Unexpected status %d from Vault fetching role `%s` role-id: %j',
+                            roleIdResp.status, id, roleIdResp.data
+                        );
                         ctx.status = proxyErrorStatus(roleIdResp);
                     }
                 } else {
-                    logger.warn('Unexpected status %d from Vault while creating role `%s`: %j',
-                        roleResp.status, id, roleResp.data);
+                    logger.warn(
+                        'Unexpected status %d from Vault while creating role `%s`: %j',
+                        roleResp.status, id, roleResp.data
+                    );
                     ctx.status = proxyErrorStatus(roleResp);
                 }
             } else {
-                printBadResponses(logger.warn, 'Unexpected status %d from Vault while creating policies for `%s`: %j',
-                    id, tokenPolicyResp, envPolicyResp, claccPolicyResp);
-                ctx.status = proxyErrorStatus(tokenPolicyResp, envPolicyResp, claccPolicyResp);
+                printBadResponses(
+                    logger.warn,
+                    'Unexpected status %d from Vault while creating policies for `%s`: %j',
+                    id, tokenPolicyResp, ...policiesResp
+                );
+                ctx.status = proxyErrorStatus(tokenPolicyResp, ...policiesResp);
             }
         }
     },
@@ -133,19 +103,23 @@ module.exports = {
                 const roleDeleteResp = await api.delete(rolePath, wvt);
                 if (roleDeleteResp.status === 204) {
                     const tokenPolicyDelResp = await api.delete(`/sys/policy/${id}-tokens`, wvt);
-                    const envPolicyDelResp = await api.delete(`/sys/policy/${id}-environments`, wvt);
-                    const claccPolicyDelResp = await api.delete(`/sys/policy/${id}-cloud-accounts`, wvt);
 
-                    if (goodStatus(tokenPolicyDelResp, envPolicyDelResp, claccPolicyDelResp)) {
+                    const policies = entities.map(entity => `${id}-${entity}`);
+
+                    const policiesResp = await Promise.all(policies
+                        .map(policy => api.delete(`/sys/policy/${policy}`, wvt))
+                    );
+
+                    if (goodStatus(tokenPolicyDelResp, ...policiesResp)) {
                         ctx.status = 204;
                     } else {
                         printBadResponses(
                             logger.warn,
                             'Unexpected status %d from Vault while deleting policies for `%s`: %j',
-                            id, tokenPolicyDelResp, envPolicyDelResp, claccPolicyDelResp
+                            id, tokenPolicyDelResp, ...policiesResp
                         );
                         // TODO: handle this type of errors in common way
-                        ctx.status = proxyErrorStatus(tokenPolicyDelResp, envPolicyDelResp, claccPolicyDelResp);
+                        ctx.status = proxyErrorStatus(tokenPolicyDelResp, ...policiesResp);
                     }
                 } else {
                     logger.warn('Unexpected status %d from Vault while deleting role `%s`: %j',
@@ -158,12 +132,48 @@ module.exports = {
         }
     },
 
-    environments(ctx) {
-        return updatePolicy(ctx, 'environments', environmentPolicyFragment);
-    },
-
-    cloudAccounts(ctx) {
-        return updatePolicy(ctx, 'cloud-accounts', cloudAccountPolicyFragment);
+    async update(ctx) {
+        const {
+            params: {id, entityKind},
+            request: {body}
+        } = ctx;
+        const entityCamelCase = camelCase(entityKind);
+        const list = body[entityCamelCase];
+        if (list) {
+            if (id.startsWith('stub-')) {
+                const user = stubUsers.get(id);
+                if (user) {
+                    ctx.status = 204;
+                } else {
+                    throw new NotFoundError();
+                }
+            } else {
+                const wvt = withToken(ctx.vaultToken);
+                const policyPath = `/sys/policy/${id}-${entityKind}`;
+                const policyResp = await api.get(policyPath, wvt);
+                if (policyResp.status === 200) {
+                    const policyRules = list
+                        .map(entityId => policyTemplate
+                            .replace('{{entityKind}}', entityKind)
+                            .replace('{{id}}', entityId))
+                        .join('\n');
+                    const resp = await api.put(policyPath, {rules: policyRules || '#'}, wvt);
+                    if (goodStatus(resp)) {
+                        ctx.status = 204;
+                    } else {
+                        logger.warn(
+                            'Unexpected status %d from Vault while updating policy `%s-%s`: %j',
+                            policyResp.status, id, entityKind, resp.data
+                        );
+                        ctx.status = proxyErrorStatus(resp);
+                    }
+                } else {
+                    ctx.status = policyResp.status;
+                }
+            }
+        } else {
+            throw new BadRequestError(`'${entityCamelCase}' field is not set`);
+        }
     },
 
     async login(ctx) {

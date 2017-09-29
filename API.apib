@@ -11,18 +11,14 @@ Secrets Service has protected HTTP API to provide access to all it's functions, 
 
 Please read [design](https://github.com/agilestacks/secrets-service/blob/master/README.md) first.
 
-There are two types of resources: Environments under `/environments` and Cloud Accounts under `/cloud-accounts`.
-Both supports same kind of secrets and operations, so if you see `/environments` the same call format works
-for `/cloud-accounts` too.
+There are three types of supported entities: `environments`, `cloud-accounts` and `licenses`.
+Supported types of `kind` field in secret object are: `password`, `cloudAccount`, `cloudAccessKeys`, `caPrivateKey`, `certificate`, `sshKey`, `usernamePassword`, `text`, `license`
 
-## Secret [/environments/{environmentId}/secrets/{secretId}]
-
-Secret is bound to environment.
-
-`kind` is one of `password`, `cloudAccount`.
+## Secret [/secrets/{entityKind}/{entityId}/secrets/{secretId}]
 
 + Parameters
-    + environmentId: `123` (string) - ID of the Environment
+    + entityKind: `environments` - Entity type identifier
+    + entityId: `123` (string) - ID of the Entity
     + secretId: `02a669c0-543b-432f-a11d-fb21f29c7200` (string) - ID of the Secret
 
 
@@ -93,7 +89,7 @@ Cloud account entity:
 + Response 504
 
 
-### Retrieve Cloud Account Session [POST /environments/{environmentId}/secrets/{secretId}/session-keys]
+### Retrieve Cloud Account Session [POST /secrets/cloud-account/{cloudAccountId}/{secretId}/session-keys]
 
 Post to cloud account session endpoint returns AWS keys valid for 1 hour.
 Optionaly send `purpose` to be included as part of _role session name_ sent to STS.
@@ -102,7 +98,7 @@ If cloud account credentials are `accessKey` and `secretKey` pair, then is must 
 root user or IAM user with MFA **disabled**.
 
 + Parameters
-    + environmentId: `123` (string) - ID of the Environment
+    + cloudAccountId: `123` (string) - ID of the Cloud Account
     + secretId: `02a669c0-543b-432f-a11d-fb21f29c7200` (string) - ID of the Secret
 
 + Request
@@ -179,10 +175,11 @@ root user or IAM user with MFA **disabled**.
             }
 
 
-### Create Secret [POST /environments/{environmentId}/secrets]
+### Create Secret [POST /secrets/{entityKind}/{entityId}]
 
 + Parameters
-    + environmentId: `123` (string) - ID of the Environment
+    + entityKind: `environments` - Entity type identifier
+    + entityId: `123` (string) - ID of the Entity
 
 + Request (application/json; charset=utf-8)
 

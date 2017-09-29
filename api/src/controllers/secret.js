@@ -15,11 +15,11 @@ const stubSecrets = new Map();
 
 const allowedKinds = [
     'password', 'cloudAccount', 'cloudAccessKeys', 'caPrivateKey',
-    'certificate', 'sshKey', 'usernamePassword', 'text'
+    'certificate', 'sshKey', 'usernamePassword', 'text', 'license'
 ];
 const allowedFields = [
     'name', 'kind',
-    'username', 'password',
+    'username', 'password', 'licenseKey',
     'certificate', 'sshKey', 'caKey', 'text',
     'cloud', 'accessKey', 'secretKey', 'roleArn'
 ];
@@ -69,17 +69,14 @@ function maskSecret(secret) {
     return masked;
 }
 
-function secretEntityId(ctx) {
-    const {params: {environmentId, cloudAccountId}} = ctx;
-    if (environmentId && !cloudAccountId) return {entityId: environmentId, entityKind: 'environments'};
-    if (!environmentId && cloudAccountId) return {entityId: cloudAccountId, entityKind: 'cloud-accounts'};
-    throw new ServerError('Too many parameters', {meta: ctx.params});
-}
-
 module.exports = {
     async create(ctx) {
-        const {entityId, entityKind} = secretEntityId(ctx);
-        const secret = lopick(ctx.request.body, allowedFields);
+        const {
+            params: {entityId, entityKind},
+            request: {body}
+        } = ctx;
+
+        const secret = lopick(body, allowedFields);
         if (!allowedKinds.some(kind => kind === secret.kind)) {
             const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret.kind}'`;
             throw new BadRequestError(error);
@@ -103,9 +100,12 @@ module.exports = {
     },
 
     async update(ctx) {
-        const {entityId, entityKind} = secretEntityId(ctx);
-        const id = ctx.params.id;
-        const update = lopick(ctx.request.body, allowedFields);
+        const {
+            params: {id, entityId, entityKind},
+            request: {body}
+        } = ctx;
+
+        const update = lopick(body, allowedFields);
         if (!allowedKinds.some(kind => kind === update.kind)) {
             const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${update.kind}'`;
             throw new BadRequestError(error);
@@ -153,8 +153,10 @@ module.exports = {
     },
 
     async delete(ctx) {
-        const {entityId, entityKind} = secretEntityId(ctx);
-        const id = ctx.params.id;
+        const {
+            params: {id, entityId, entityKind}
+        } = ctx;
+
         if (entityId.startsWith('stub-')) {
             const removed = stubSecrets.delete(id);
             if (removed) {
@@ -181,8 +183,10 @@ module.exports = {
     },
 
     async get(ctx) {
-        const {entityId, entityKind} = secretEntityId(ctx);
-        const id = ctx.params.id;
+        const {
+            params: {id, entityId, entityKind}
+        } = ctx;
+
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
@@ -211,8 +215,11 @@ module.exports = {
     },
 
     async sessionKeys(ctx) {
-        const {entityId, entityKind} = secretEntityId(ctx);
-        const id = ctx.params.id;
+        const {
+            params: {id, entityId, entityKind},
+            request: {body}
+        } = ctx;
+
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
@@ -246,25 +253,31 @@ module.exports = {
                 if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
                     let stsReply;
                     if (secret.roleArn) {
-                        const purpose = (ctx.request.body && ctx.request.body.purpose) ?
-                            ctx.request.body.purpose :
-                            'automation';
+                        const purpose = (body && body.purpose)
+                            ? body.purpose
+                            : 'automation';
                         try {
                             stsReply = await assumeRole(secret.roleArn, purpose);
                         } catch (err) {
-                            const error = `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`;
-                            throw new ServerError(error, {status: 502});
+                            throw new ServerError(
+                                `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`,
+                                {status: 502}
+                            );
                         }
                     } else if (secret.accessKey && secret.secretKey) {
                         try {
                             stsReply = await getSession(secret.accessKey, secret.secretKey);
                         } catch (err) {
-                            const error = `AWS STS error opening session for '${maskKey(secret.accessKey)}': ${err}`;
-                            throw new ServerError(error, {status: 502});
+                            throw new ServerError(
+                                `AWS STS error opening session for '${maskKey(secret.accessKey)}': ${err}`,
+                                {status: 502}
+                            );
                         }
                     } else {
-                        const error = 'The requested secret has no `roleArn`, nor `accessKey` with `secretKey` defined';
-                        throw new BadRequestError(error, 405);
+                        throw new BadRequestError(
+                            'The requested secret has no `roleArn`, nor `accessKey` with `secretKey` defined',
+                            405
+                        );
                     }
 
                     const creds = stsReply.Credentials;
@@ -277,8 +290,10 @@ module.exports = {
                         ttl: stsTtl
                     };
                 } else {
-                    const error = 'The requested secret is not `cloudAccount:aws` kind';
-                    throw new BadRequestError(error, 405);
+                    throw new BadRequestError(
+                        'The requested secret is not `cloudAccount:aws` kind',
+                        405
+                    );
                 }
             }
         }

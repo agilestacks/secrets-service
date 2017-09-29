@@ -211,7 +211,7 @@ describe('secrets', () => {
     let apiV1serviceLow;
     let apiV1user;
 
-    const paths = ['/environments/env-1/secrets', '/cloud-accounts/clacc-1/secrets'];
+    const paths = ['/secrets/environments/env-1', '/secrets/cloud-accounts/clacc-1'];
 
     const setupApi = async () => {
         const loginResp = await apiV1open.post(authServiceLoginPath,
