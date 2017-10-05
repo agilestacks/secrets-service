@@ -6,7 +6,7 @@ const {NotFoundError, BadRequestError} = require('../errors');
 const stubUsers = new Map(); // Jest tests
 
 const policyTemplate = `
-path "secret/{{entityKind}}/{{id}}/*" {
+path "secret/{{entityKind}}/{{entityId}}/*" {
   capabilities = ["create", "read", "update", "delete", "list"]
 }
 `;
@@ -21,7 +21,7 @@ path "auth/token/revoke-self" {
 }
 `;
 
-const entities = ['environments', 'cloud-accounts', 'licenses'];
+const entities = ['environments', 'cloud-accounts', 'licenses', 'templates'];
 
 module.exports = {
     async create(ctx) {
@@ -155,7 +155,7 @@ module.exports = {
                     const policyRules = list
                         .map(entityId => policyTemplate
                             .replace('{{entityKind}}', entityKind)
-                            .replace('{{id}}', entityId))
+                            .replace('{{entityId}}', entityId))
                         .join('\n');
                     const resp = await api.put(policyPath, {rules: policyRules || '#'}, wvt);
                     if (goodStatus(resp)) {
