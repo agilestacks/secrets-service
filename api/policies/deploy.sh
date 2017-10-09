@@ -31,10 +31,10 @@ for role in authentication-service-high-priv \
 done
 
 # Fetch the RoleID of the AppRole
-role_id_high_priv_auth=$(${vault} read -format=json auth/approle/role/authentication-service-high-priv/role-id |jq -Mr .data.role_id | base64)
-role_id_low_priv_auth=$(${vault} read -format=json auth/approle/role/authentication-service-low-priv/role-id |jq -Mr .data.role_id | base64)
-role_id_high_priv_hub=$(${vault} read -format=json auth/approle/role/automation-hub-high-priv/role-id |jq -Mr .data.role_id | base64)
-role_id_low_priv_hub=$(${vault} read -format=json auth/approle/role/automation-hub-low-priv/role-id |jq -Mr .data.role_id | base64)
+role_id_high_priv_auth=$(${vault} read -format=json auth/approle/role/authentication-service-high-priv/role-id | jq -Mr .data.role_id | tr -d '\n' | base64)
+role_id_low_priv_auth=$(${vault} read -format=json auth/approle/role/authentication-service-low-priv/role-id | jq -Mr .data.role_id | tr -d '\n' | base64)
+role_id_high_priv_hub=$(${vault} read -format=json auth/approle/role/automation-hub-high-priv/role-id | jq -Mr .data.role_id | tr -d '\n' | base64)
+role_id_low_priv_hub=$(${vault} read -format=json auth/approle/role/automation-hub-low-priv/role-id | jq -Mr .data.role_id | tr -d '\n' | base64)
 
 cat >${cwd}/vault-service-roles.yaml <<EOF
 apiVersion: v1
