@@ -1,4 +1,4 @@
-FROM node:8.4
+FROM node:8.5
 MAINTAINER Arkadi Shishlov <arkadi@agilestacks.com>
 
 RUN mkdir /app
