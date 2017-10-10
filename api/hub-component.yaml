@@ -36,9 +36,6 @@ parameters:
 
 templates:
   files: ["templates/*.template"]
-  extra:
-  - kind: curly
-    files: ["*.template"]
 
 outputs:
 - name: component.secrets-service.endpoint

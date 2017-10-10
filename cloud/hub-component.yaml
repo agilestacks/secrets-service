@@ -24,6 +24,3 @@ outputs:
 - name: component.secrets-service.image
   brief: Agile Stacks secret service  docker repository
   fromTfVar: repository_url
-
-templates:
-  files: ["*.template"]
