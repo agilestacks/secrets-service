@@ -11,6 +11,8 @@ function loggerFactory(additionalMeta) {
                 handleExceptions: true,
                 humanReadableUnhandledException: true,
                 timestamp: true,
+                colorize: true,
+                prettyPrint: true,
                 json: false
             })
         ],
