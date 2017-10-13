@@ -8,7 +8,7 @@ vault=${vault:-vault}
 NAMESPACE=${NAMESPACE:=automation-hub}
 kubectl=${kubectl:-kubectl --namespace=$NAMESPACE}
 
-VPC_CIDR=${VPC_CIDR:-10.0.0.0/16}
+CIDR=10.0.0.0/8
 
 # Creating Policies
 ${vault} write sys/policy/authentication-service-high-priv rules=@${cwd}/policy-auth-high.hcl
@@ -26,7 +26,7 @@ for role in authentication-service-high-priv \
             automation-hub-low-priv; do
 
     ${vault} write auth/approle/role/${role} period=60m \
-        bind_secret_id=false bound_cidr_list=127.0.0.0/8,172.17.0.0/16,${VPC_CIDR} \
+        bind_secret_id=false bound_cidr_list=127.0.0.0/8,172.17.0.0/16,${CIDR} \
         policies=${role}
 done
 
