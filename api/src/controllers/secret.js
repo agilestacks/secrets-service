@@ -26,10 +26,11 @@ const allowedFields = [
 
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
 
-function assumeRole(roleName, purpose) {
+function assumeRole(roleName, externalId, purpose) {
     const prefix = purpose.substring(0, 57).replace(/[^\w+=,.@-]/g, '-');
     const params = {
         RoleArn: roleName,
+        ExternalId: externalId,
         RoleSessionName: `${prefix}-${randomSuf()}`, // max length is 64
         DurationSeconds: stsTtl
     };
@@ -266,7 +267,7 @@ module.exports = {
                             ? body.purpose
                             : 'automation';
                         try {
-                            stsReply = await assumeRole(secret.roleArn, purpose);
+                            stsReply = await assumeRole(secret.roleArn, secret.externalId, purpose);
                         } catch (err) {
                             throw new ServerError(
                                 `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`,
