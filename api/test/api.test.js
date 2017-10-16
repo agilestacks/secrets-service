@@ -268,8 +268,9 @@ describe('secrets', () => {
         }));
     });
 
+    // TODO `cloudAccount` is only for /cloud-accounts
     test('cloud account - mask', () => {
-        expect.assertions(28);
+        expect.assertions(30);
 
         return Promise.all(paths.map(async (path) => {
             const secret = {
@@ -277,6 +278,7 @@ describe('secrets', () => {
                 kind: 'cloudAccount',
                 cloud: 'aws',
                 roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution',
+                externalId: '4f606425________________________________',
                 accessKey: 'AKIAJWMTY___________',
                 secretKey: '3SaIOZR1________________________________'
             };
@@ -297,6 +299,7 @@ describe('secrets', () => {
             expect(getResp.data.kind).toBe(secret.kind);
             expect(getResp.data.cloud).toBe(secret.cloud);
             expect(getResp.data.roleArn).toBe('arn:aws:iam::973998981304:role/lamb******************');
+            expect(getResp.data.externalId).toBe('4f606425********************************');
             expect(getResp.data.accessKey).toBe('AKIAJWMT************');
             expect(getResp.data.secretKey).toBe('3SaI************************************');
 

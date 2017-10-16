@@ -21,7 +21,7 @@ const allowedFields = [
     'name', 'kind',
     'username', 'password', 'licenseKey',
     'certificate', 'sshKey', 'caKey', 'text',
-    'cloud', 'accessKey', 'secretKey', 'roleArn'
+    'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId'
 ];
 
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
@@ -54,6 +54,11 @@ function maskRole(roleArn) {
     return roleArn.substring(0, 26).padEnd(roleArn.length, '*');
 }
 
+function maskExternalId(externalId) {
+    const truncAt = Math.min(externalId.length, 10) - 2;
+    return externalId.substr(0, truncAt).padEnd(externalId.length, '*');
+}
+
 function maskKey(key) {
     const truncAt = key.startsWith('AK') ? 8 : 4;
     return key.substring(0, truncAt).padEnd(key.length, '*');
@@ -63,6 +68,7 @@ function maskSecret(secret) {
     const masked = Object.assign({}, secret);
     if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
         if (masked.roleArn) masked.roleArn = maskRole(secret.roleArn);
+        if (masked.externalId) masked.externalId = maskExternalId(masked.externalId);
         if (masked.accessKey) masked.accessKey = maskKey(masked.accessKey);
         if (masked.secretKey) masked.secretKey = maskKey(masked.secretKey);
     }
