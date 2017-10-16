@@ -135,9 +135,12 @@ module.exports = {
                     ctx.status = proxyErrorStatus(getResp);
                 }
             } else {
-                const secret = getResp.data;
+                // First .data is axios response field. Second .data vault payload field.
+                const secret = getResp.data.data;
                 if (secret.kind !== update.kind) {
-                    throw new BadRequestError('Secret `kind` doesn\'t match', 409);
+                    const msg = 'Secret `kind` doesn\'t match';
+                    logger.error(msg, {oldKind: secret.kind, newKind: update.kind});
+                    throw new BadRequestError(msg, 409);
                 } else {
                     const putResp = await api.put(path, update, wvt);
                     if (putResp.status !== 204) {
