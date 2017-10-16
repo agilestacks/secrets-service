@@ -12,7 +12,7 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 80
+    targetPort: 3002
     protocol: TCP
   selector:
     provider: agilestacks.com

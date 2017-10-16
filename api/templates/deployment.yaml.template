@@ -24,19 +24,19 @@ spec:
         imagePullPolicy: Always
         env:
         - name: VAULT_API
-          value: ${component.vault.url}/v1
+          value: "${component.vault.url}/v1"
         - name: SECRETS_PORT
-          value: "80"
+          value: "3002"
         ports:
         - name: http
-          containerPort: 80
+          containerPort: 3002
         readinessProbe:
           httpGet:
             path: /api/v1/ping
-            port: 80
+            port: 3002
         livenessProbe:
           httpGet:
             path: /api/v1/ping
-            port: 80
+            port: 3002
           initialDelaySeconds: 60
           timeoutSeconds: 3

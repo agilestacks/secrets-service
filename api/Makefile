@@ -1,5 +1,3 @@
-.DEFAULT_GOAL := test
-
 .DEFAULT_GOAL := lint
 
 export AWS_DEFAULT_REGION ?= us-east-2
@@ -14,6 +12,8 @@ export VPC_CIDR           ?= 10.0.0.0/16
 
 export VAULT_LOCAL_PORT   := 31321
 export VAULT_ADDR         := http://127.0.0.1:$(VAULT_LOCAL_PORT)
+
+export telepresence       ?= telepresence -s secrets-service --context $(TF_VAR_name).$(TF_VAR_base_domain) --namespace $(NAMESPACE) --expose 3002:80
 
 VAULT_COMPONENT_SOURCE_DIR ?= ../../components/vault
 
@@ -79,8 +79,15 @@ vault-test-setup:
 	@bin/vault-test-setup.sh
 .PHONY: vault-test
 
-
 output:
 	@echo Outputs:
 	@echo app_roles_secret=vault-service-roles
 .PHONY: output
+
+run-telepresence:
+	$(telepresence) --run npm start
+.PHONY: run-telepresence
+
+debug-telepresence:
+	$(telepresence) --run npm run debug
+.PHONY: debug-telepresence
