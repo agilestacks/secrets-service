@@ -13,7 +13,7 @@ export VPC_CIDR           ?= 10.0.0.0/16
 export VAULT_LOCAL_PORT   := 31321
 export VAULT_ADDR         := http://127.0.0.1:$(VAULT_LOCAL_PORT)
 
-export telepresence       ?= telepresence -s secrets-service --context $(TF_VAR_name).$(TF_VAR_base_domain) --namespace $(NAMESPACE) --expose 3002:80
+export telepresence       ?= telepresence -s secrets-service --context $(TF_VAR_name).$(TF_VAR_base_domain) --namespace $(NAMESPACE) --expose 3002
 
 VAULT_COMPONENT_SOURCE_DIR ?= ../../components/vault
 # hack, TODO move to hub invoke
