@@ -19,6 +19,23 @@ const routerConf = {
 };
 const router = new Router(routerConf);
 const publicRouter = new Router(routerConf);
+const pingRouter = new Router(routerConf);
+
+pingRouter.use(async (ctx, next) => {
+    const {method, url, logger} = ctx;
+    logger.silly('PING Request <<< %s %s', method, url);
+
+    try {
+        await next();
+    } catch (error) {
+        logger.error('Error', {error});
+    }
+
+    logger.silly('PING Response >>> %d', ctx.status);
+});
+pingRouter.get('/ping', (ctx) => {
+    ctx.body = 'pong';
+});
 
 publicRouter.get('/ping', (ctx) => {
     ctx.body = 'pong';
@@ -52,10 +69,13 @@ const idGenerator = {
 module.exports = app
     .use(parser())
     .use(async (ctx, next) => {
-        const {method, url, request} = ctx;
-
-        const logger = loggerFactory({requestId: idGenerator.next()});
-        ctx.logger = logger;
+        ctx.logger = loggerFactory({requestId: idGenerator.next()});
+        await next();
+    })
+    .use(pingRouter.routes())
+    .use(pingRouter.allowedMethods())
+    .use(async (ctx, next) => {
+        const {method, url, request, logger} = ctx;
 
         logger.debug('HTTP <<<: %s %s', method, url);
         logger.silly('HTTP <<<: X-Secrets-Token: %s', request.headers['x-secrets-token']);
