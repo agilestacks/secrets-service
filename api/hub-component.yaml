@@ -26,8 +26,8 @@ parameters:
   - name: service
     default: secrets
   - name: vaultApiEndpoint
-    kind: user
     default: "*unset*"
+    kind: tech
     fromEnv: VAULT_API
 - name: dns.domain
   brief: DNS domain
