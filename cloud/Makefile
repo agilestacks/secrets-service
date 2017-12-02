@@ -31,22 +31,22 @@ init:
 .PHONY: init
 
 get:
-	@cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
+	cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
 		$(terraform) get $(TF_UPDATE)
 .PHONY: get
 
 plan:
-	@cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
-	$(terraform) plan $(TF_OPTS) -refresh=true -module-depth=-1 -out=terraform.tfplan
+	cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
+		$(terraform) plan $(TF_OPTS) -refresh=true -module-depth=-1 -out=terraform.tfplan
 .PHONY: plan
 
 apply:
-	@cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
-	$(terraform) apply $(TF_OPTS) -Xshadow=false terraform.tfplan
+	cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
+		$(terraform) apply $(TF_OPTS) -Xshadow=false terraform.tfplan
 .PHONY: apply
 
 undeploy: init
-	@cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
-	$(terraform) plan $(TF_OPTS) -destroy -refresh=true -module-depth=-1 -out=terraform.tfplan
+	cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
+		$(terraform) plan $(TF_OPTS) -destroy -refresh=true -module-depth=-1 -out=terraform.tfplan
 	$(MAKE) apply
-.PHONY: undeploy_this
+.PHONY: undeploy
