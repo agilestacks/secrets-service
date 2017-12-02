@@ -21,14 +21,10 @@ parameters:
   - name: namespace
     default: automation-hub
     env:  NAMESPACE
+  - name: name
+    default: secrets-service
   - name: image
     env:  IMAGE
-  - name: service
-    default: secrets
-  - name: vaultApiEndpoint
-    default: "*unset*"
-    kind: tech
-    fromEnv: VAULT_API
 - name: dns.domain
   brief: DNS domain
   kind: tech
@@ -40,7 +36,7 @@ templates:
 outputs:
 - name: component.secrets-service.endpoint
   brief: Secrets Service API endpoint
-  value: http://${component.secrets-service.service}.${component.secrets-service.namespace}.svc.cluster.local/api/v1
+  value: http://${component.secrets-service.name}.${component.secrets-service.namespace}.svc.cluster.local/api/v1
 - name: component.secrets-service.app-roles.secret
   brief: Name of the secret that has been created with ids of app roles
   fromTfVar: app_roles_secret

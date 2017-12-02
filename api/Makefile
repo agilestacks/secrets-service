@@ -17,7 +17,7 @@ export telepresence       ?= telepresence -s secrets-service --context $(TF_VAR_
 
 VAULT_COMPONENT_SOURCE_DIR ?= ../../components/vault
 # hack, TODO move to hub invoke
-VAULT_COMPONENT_NAME ?= vault-service
+VAULT_COMPONENT_NAME ?= vault
 
 build:
 	@docker build -t $(IMAGE):$(IMAGE_VERSION) .

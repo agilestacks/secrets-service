@@ -3,7 +3,6 @@ version: 1
 kind: component
 meta:
   name: secrets-service-cloud
-  brief: Cloud Resources for Authorization and Authentication Serivce
   source:
     dir: .
 
@@ -11,15 +10,16 @@ parameters:
 - name: dns.name
   default: default
   env: TF_VAR_name
-- name: component.secrets-service.service
-  default: secrets-service
-  env: COMPONENT_NAME
 - name: dns.baseDomain
   default: stacks.delivery
   env: TF_VAR_base_domain
 - name: cloud.region
   kind: user
   env: AWS_DEFAULT_REGION
+- name: component.secrets-service.name
+  default: secrets-service
+  env: COMPONENT_NAME
+
 outputs:
 - name: component.secrets-service.image
   brief: Agile Stacks secret service  docker repository
