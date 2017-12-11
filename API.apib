@@ -96,7 +96,13 @@ Post to cloud account session endpoint returns AWS keys valid for 1 hour.
 Optionaly send `purpose` to be included as part of _role session name_ sent to STS.
 
 If cloud account credentials are `accessKey` and `secretKey` pair, then is must be keys either of account
-root user or IAM user with MFA **disabled**.
+root user or IAM user with MFA **disabled**. The session keys obtained cannot call IAM API due to
+restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.com/STS/latest/APIReference/API_GetSessionToken.html):
+
+> The temporary security credentials created by GetSessionToken can be used to make API calls to any AWS service with the following exceptions:
+>
+> - You cannot call any IAM APIs unless MFA authentication information is included in the request.
+> - You cannot call any STS API except AssumeRole or GetCallerIdentity.
 
 + Parameters
     + cloudAccountId: `123` (string) - ID of the Cloud Account
