@@ -15,8 +15,7 @@ export VAULT_ADDR         := http://127.0.0.1:$(VAULT_LOCAL_PORT)
 
 export telepresence       ?= telepresence -s secrets-service --context $(TF_VAR_name).$(TF_VAR_base_domain) --namespace $(NAMESPACE) --expose 3002
 
-VAULT_COMPONENT_SOURCE_DIR ?= ../../components/vault
-# hack, TODO move to hub invoke
+# How to discover vault component name properly?
 VAULT_COMPONENT_NAME ?= vault
 
 build:
@@ -59,11 +58,12 @@ run:
 .PHONY: run
 
 vault-connect:
-	@cd $(VAULT_COMPONENT_SOURCE_DIR) && $(MAKE) connect auth COMPONENT_NAME=$(VAULT_COMPONENT_NAME)
+	$(HUB) invoke $(VAULT_COMPONENT_NAME) connect
+	$(HUB) invoke $(VAULT_COMPONENT_NAME) auth
 .PHONY: vault-connect
 
 vault-disconnect:
-	cd $(VAULT_COMPONENT_SOURCE_DIR) && $(MAKE) disconnect COMPONENT_NAME=$(VAULT_COMPONENT_NAME)
+	$(HUB) invoke $(VAULT_COMPONENT_NAME) disconnect
 .PHONY: vault-disconnect
 
 policies-deploy:
