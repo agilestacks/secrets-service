@@ -34,6 +34,10 @@ templates:
   files: ["templates/*.template"]
 
 outputs:
+- name: component.secrets-service.name
+  value: ${component.secrets-service.name}
+- name: component.secrets-service.namespace
+  value: ${component.secrets-service.namespace}    
 - name: component.secrets-service.endpoint
   brief: Secrets Service API endpoint
   value: http://${component.secrets-service.name}.${component.secrets-service.namespace}.svc.cluster.local/api/v1
