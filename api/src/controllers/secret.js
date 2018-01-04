@@ -20,7 +20,7 @@ const allowedKinds = [
 const allowedFields = [
     'name', 'kind',
     'username', 'password', 'licenseKey',
-    'certificate', 'sshKey', 'caKey', 'text',
+    'certificate', 'sshKey', 'caPrivateKey', 'text',
     'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId'
 ];
 
