@@ -5,17 +5,13 @@ meta:
   name: secrets-service
   brief: Secrets service
   source:
-      dir: ../api
+    dir: ../api
 
 requires:
 - kubernetes
 
 parameters:
 - name: component.vault.url
-- name: cloud.vpc.cidr
-  env:  VPC_CIDR
-- name: component.vault.source_dir
-  env:  VAULT_COMPONENT_SOURCE_DIR
 - name: component.secrets-service
   parameters:
   - name: namespace
@@ -26,8 +22,6 @@ parameters:
   - name: image
     env:  IMAGE
 - name: dns.domain
-  brief: DNS domain
-  kind: tech
   env: DOMAIN_NAME
 
 templates:
@@ -35,12 +29,7 @@ templates:
 
 outputs:
 - name: component.secrets-service.name
-  value: ${component.secrets-service.name}
 - name: component.secrets-service.namespace
-  value: ${component.secrets-service.namespace}    
 - name: component.secrets-service.endpoint
   brief: Secrets Service API endpoint
   value: http://${component.secrets-service.name}.${component.secrets-service.namespace}.svc.cluster.local/api/v1
-- name: component.secrets-service.app-roles.secret
-  brief: Name of the secret that has been created with ids of app roles
-  fromTfVar: app_roles_secret

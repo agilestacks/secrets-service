@@ -1,0 +1,32 @@
+---
+version: 1
+kind: component
+meta:
+  name: secrets-service-app-roles
+  brief: Secrets Service Application Roles for AgileStacks infra
+  source:
+    dir: ../policies
+
+requires:
+- vault
+- kubernetes
+
+parameters:
+- name: component.secrets-service.app-roles.kubernetes-secret-name
+  value: vault-service-roles
+  env: KUBERNETES_SECRET_NAME
+- name: component.secrets-service.app-roles.vault-component-name
+  value: vault
+  env: VAULT_COMPONENT_NAME
+- name: component.secrets-service.namespace
+  default: automation-hub
+  env:  NAMESPACE
+- name: dns.domain
+  env: DOMAIN_NAME
+
+templates:
+  files: ["*.template"]
+
+outputs:
+- name: component.secrets-service.app-roles.kubernetes-secret-name
+  brief: Name of the Kubernetes secret with Ids of App Roles

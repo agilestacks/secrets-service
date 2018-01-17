@@ -8,15 +8,7 @@ export IMAGE              ?= $(REGISTRY)/agilestacks/$(TF_VAR_name)/secrets-serv
 export IMAGE_VERSION      ?= $(shell git rev-parse HEAD | colrm 7)
 export NAMESPACE          ?= automation-hub
 export kubectl            ?= kubectl --context=$(TF_VAR_name).$(TF_VAR_base_domain) --namespace=$(NAMESPACE)
-export VPC_CIDR           ?= 10.0.0.0/16
-
-export VAULT_LOCAL_PORT   := 31321
-export VAULT_ADDR         := http://127.0.0.1:$(VAULT_LOCAL_PORT)
-
 export telepresence       ?= telepresence -s secrets-service --context $(TF_VAR_name).$(TF_VAR_base_domain) --namespace $(NAMESPACE) --expose 3002
-
-# How to discover vault component name properly?
-VAULT_COMPONENT_NAME ?= vault
 
 build:
 	@docker build -t $(IMAGE):$(IMAGE_VERSION) .
@@ -29,16 +21,15 @@ push:
 	docker push $(IMAGE):latest
 .PHONY: push
 
-deploy: build push vault-connect policies-deploy vault-disconnect
+deploy: build push
 	$(kubectl) apply -f templates/namespace.yaml
 	$(kubectl) apply -f templates/service.yaml
 	$(kubectl) apply -f templates/deployment.yaml
-	$(MAKE) output
 .PHONY: deploy
 
-undeploy: vault-connect policies-undeploy vault-disconnect
-	$(kubectl) delete -f templates/deployment.yaml | true
-	$(kubectl) delete -f templates/service.yaml    | true
+undeploy:
+	-$(kubectl) delete -f templates/deployment.yaml
+	-$(kubectl) delete -f templates/service.yaml
 .PHONY: undeploy
 
 install:
@@ -57,34 +48,9 @@ run:
 	@npm start
 .PHONY: run
 
-vault-connect:
-	$(HUB) invoke $(VAULT_COMPONENT_NAME) connect
-	$(HUB) invoke $(VAULT_COMPONENT_NAME) auth
-.PHONY: vault-connect
-
-vault-disconnect:
-	$(HUB) invoke $(VAULT_COMPONENT_NAME) disconnect
-.PHONY: vault-disconnect
-
-policies-deploy:
-	@echo "Bootstrap Vault roles"
-	$(SHELL) -e policies/deploy.sh
-.PHONY: policies-deploy
-
-policies-undeploy:
-	@echo "Delete Vault roles"
-	$(SHELL) policies/undeploy.sh
-.PHONY: policies-undeploy
-
-
 vault-test-setup:
 	@bin/vault-test-setup.sh
 .PHONY: vault-test
-
-output:
-	@echo Outputs:
-	@echo app_roles_secret=vault-service-roles
-.PHONY: output
 
 run-telepresence:
 	$(telepresence) --run npm start

@@ -1,11 +1,6 @@
-#!/bin/sh -e
-
-cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#!/bin/sh -x
 
 vault=${vault:-vault}
-kubectl=${kubectl:-"kubectl --namespace=automation-hub"}
-
-${kubectl} delete -f ${cwd}/vault-service-roles.yaml | true
 
 ${vault} delete auth/approle/role/authentication-service-high-priv
 ${vault} delete auth/approle/role/authentication-service-low-priv
@@ -17,6 +12,7 @@ ${vault} delete sys/policy/authentication-service-low-priv
 ${vault} delete sys/policy/automation-hub-high-priv
 ${vault} delete sys/policy/automation-hub-low-priv
 
-${vault} auth-disable approle | true
+# Keep AppRole enabled to preserve roles created for Okta users
+# ${vault} auth-disable approle
 
-rm -f ${cwd}/vault-service-roles.yaml
+rm -f vault-service-roles.yaml
