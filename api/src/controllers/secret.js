@@ -142,7 +142,7 @@ module.exports = {
                     ctx.status = proxyErrorStatus(getResp);
                 }
             } else {
-                // First .data is axios response field. Second .data vault payload field.
+                // First .data is axios response field. Second .data is Vault payload field.
                 const secret = getResp.data.data;
                 if (secret.kind !== update.kind) {
                     const msg = 'Secret `kind` doesn\'t match';
