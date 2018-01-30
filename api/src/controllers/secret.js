@@ -15,11 +15,12 @@ const stubSecrets = new Map();
 
 const allowedKinds = [
     'password', 'cloudAccount', 'cloudAccessKeys', 'caPrivateKey',
-    'certificate', 'sshKey', 'usernamePassword', 'text', 'license'
+    'certificate', 'sshKey', 'usernamePassword', 'text', 'license',
+    'loginToken'
 ];
 const allowedFields = [
     'name', 'kind',
-    'username', 'password', 'licenseKey',
+    'username', 'password', 'loginToken', 'licenseKey',
     'certificate', 'sshKey', 'caPrivateKey', 'text',
     'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId'
 ];

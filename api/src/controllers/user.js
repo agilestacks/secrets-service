@@ -21,7 +21,7 @@ path "auth/token/revoke-self" {
 }
 `;
 
-const entities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances'];
+const entities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances', 'service-accounts'];
 
 module.exports = {
     async create(ctx) {

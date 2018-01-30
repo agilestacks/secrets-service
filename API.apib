@@ -11,9 +11,11 @@ Secrets Service has protected HTTP API to provide access to all it's functions, 
 
 Please read [design](https://github.com/agilestacks/secrets-service/blob/master/README.md) first.
 
-There are several types of supported entities: `cloud-accounts`, `environments`, `templates`, `instances`, and `licenses`.
+There are several types of supported entities: `cloud-accounts`, `environments`, `templates`, `instances`,
+`licenses`, and `service-accounts`.
 
-Supported types of `kind` field in secret object are: `password`, `cloudAccount`, `cloudAccessKeys`, `caPrivateKey`, `certificate`, `sshKey`, `usernamePassword`, `text`, `license`.
+Supported types of `kind` field in secret object are: `password`, `cloudAccount`, `cloudAccessKeys`,
+`caPrivateKey`, `certificate`, `sshKey`, `usernamePassword`, `loginToken`, `text`, and `license`.
 
 ## Secret [/secrets/{entityKind}/{entityId}/{secretId}]
 
