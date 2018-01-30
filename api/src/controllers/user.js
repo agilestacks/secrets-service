@@ -108,8 +108,8 @@ module.exports = {
                     const policiesResp = await Promise.all(policies
                         .map(policy => api.delete(`/sys/policy/${policy}`, wvt))
                     );
-
-                    if (goodStatus(tokenPolicyDelResp, ...policiesResp)) {
+                                                          // allow missing policies
+                    if (goodStatus(tokenPolicyDelResp, ...policiesResp.filter(response => !response.status === 404))) {
                         ctx.status = 204;
                     } else {
                         printBadResponses(
