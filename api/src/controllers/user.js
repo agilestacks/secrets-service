@@ -2,6 +2,7 @@ const {camelCase} = require('lodash');
 const {api, withToken, goodStatus, proxyErrorStatus, printBadResponses} = require('../vault');
 const {logger} = require('../logger');
 const {NotFoundError, BadRequestError} = require('../errors');
+const {allowedEntities, checkEntityKind} = require('./secret');
 
 const stubUsers = new Map(); // Jest tests
 
@@ -21,8 +22,6 @@ path "auth/token/revoke-self" {
 }
 `;
 
-const entities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances', 'service-accounts'];
-
 module.exports = {
     async create(ctx) {
         const id = ctx.params.id;
@@ -41,7 +40,7 @@ module.exports = {
                 rules: tokenPolicy
             }, wvt);
 
-            const policies = entities.map(entity => `${id}-${entity}`);
+            const policies = allowedEntities.map(entity => `${id}-${entity}`);
 
             const policiesResp = await Promise.all(policies
                 .map(policy => api.put(`/sys/policy/${policy}`, {rules: '#'}, wvt))
@@ -104,7 +103,7 @@ module.exports = {
                 if (roleDeleteResp.status === 204) {
                     const tokenPolicyDelResp = await api.delete(`/sys/policy/${id}-tokens`, wvt);
 
-                    const policies = entities.map(entity => `${id}-${entity}`);
+                    const policies = allowedEntities.map(entity => `${id}-${entity}`);
 
                     const policiesResp = await Promise.all(policies
                         .map(policy => api.delete(`/sys/policy/${policy}`, wvt))
@@ -137,6 +136,7 @@ module.exports = {
             params: {id, entityKind},
             request: {body}
         } = ctx;
+        checkEntityKind(entityKind);
         const entityCamelCase = camelCase(entityKind);
         const list = body[entityCamelCase];
         if (list) {

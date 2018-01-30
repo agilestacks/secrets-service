@@ -13,6 +13,7 @@ const stsTtl = 3600;
 
 const stubSecrets = new Map();
 
+const allowedEntities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances', 'service-accounts'];
 const allowedKinds = [
     'password', 'cloudAccount', 'cloudAccessKeys', 'caPrivateKey',
     'certificate', 'sshKey', 'usernamePassword', 'text', 'license',
@@ -77,18 +78,33 @@ function maskSecret(secret) {
     return masked;
 }
 
+function checkEntityKind(entity) {
+    if (!allowedEntities.some(kind => kind === entity)) {
+        const error = `Entity must be one of '${allowedEntities.join(', ')}'; got '${entity}'`;
+        throw new BadRequestError(error);
+    }
+}
+
+function checkSecretKind(secret) {
+    if (!allowedKinds.some(kind => kind === secret)) {
+        const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret}'`;
+        throw new BadRequestError(error);
+    }
+}
+
 module.exports = {
+    allowedEntities,
+    checkEntityKind,
+
     async create(ctx) {
         const {
             params: {entityId, entityKind},
             request: {body}
         } = ctx;
 
+        checkEntityKind(entityKind);
         const secret = lopick(body, allowedFields);
-        if (!allowedKinds.some(kind => kind === secret.kind)) {
-            const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret.kind}'`;
-            throw new BadRequestError(error);
-        }
+        checkSecretKind(secret.kind);
         const id = uuidv4();
         if (entityId.startsWith('stub-')) {
             stubSecrets.set(id, secret);
@@ -113,11 +129,9 @@ module.exports = {
             request: {body}
         } = ctx;
 
+        checkEntityKind(entityKind);
         const update = lopick(body, allowedFields);
-        if (!allowedKinds.some(kind => kind === update.kind)) {
-            const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${update.kind}'`;
-            throw new BadRequestError(error);
-        }
+        checkSecretKind(update.kind);
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
@@ -168,6 +182,7 @@ module.exports = {
             params: {id, entityId, entityKind}
         } = ctx;
 
+        checkEntityKind(entityKind);
         if (entityId.startsWith('stub-')) {
             const removed = stubSecrets.delete(id);
             if (removed) {
@@ -198,6 +213,7 @@ module.exports = {
             params: {id, entityId, entityKind}
         } = ctx;
 
+        checkEntityKind(entityKind);
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
@@ -231,6 +247,7 @@ module.exports = {
             request: {body}
         } = ctx;
 
+        checkEntityKind(entityKind);
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
