@@ -126,6 +126,7 @@ module.exports = {
     async update(ctx) {
         const {
             params: {id, entityId, entityKind},
+            query: {create},
             request: {body}
         } = ctx;
 
@@ -150,29 +151,32 @@ module.exports = {
             const getResp = await api.get(path, wvt);
             if (getResp.status !== 200) {
                 if (getResp.status === 404) {
-                    throw new NotFoundError();
+                    if (!create) {
+                        throw new NotFoundError();
+                    }
                 } else {
                     logger.warn('Unexpected status %d from Vault reading secret `%s`: %j',
                         getResp.status, path, getResp.data);
                     ctx.status = proxyErrorStatus(getResp);
                 }
-            } else {
+            }
+            const updating = getResp.status === 200;
+            if (updating) {
                 // First .data is axios response field. Second .data is Vault payload field.
                 const secret = getResp.data.data;
                 if (secret.kind !== update.kind) {
                     const msg = 'Secret `kind` doesn\'t match';
                     logger.error(msg, {oldKind: secret.kind, newKind: update.kind});
                     throw new BadRequestError(msg, 409);
-                } else {
-                    const putResp = await api.put(path, update, wvt);
-                    if (putResp.status !== 204) {
-                        logger.warn('Unexpected status %d from Vault updating secret `%s` / `%s`: %j',
-                            putResp.status, path, update.name, putResp.data);
-                        ctx.status = proxyErrorStatus(putResp);
-                    } else {
-                        ctx.status = 204;
-                    }
                 }
+            }
+            const putResp = await api.put(path, update, wvt);
+            if (putResp.status !== 204) {
+                logger.warn('Unexpected status %d from Vault %s secret `%s` / `%s`: %j',
+                    putResp.status, updating ? 'updating' : 'creating', path, update.name, putResp.data);
+                ctx.status = proxyErrorStatus(putResp);
+            } else {
+                ctx.status = updating ? 204 : 201;
             }
         }
     },

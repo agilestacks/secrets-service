@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
+const uuidv4 = require('uuid/v4');
 
 // eslint-disable-next-line import/no-unresolved
 const vaultServiceRoles = require('../vault-service-roles.json');
@@ -237,7 +238,7 @@ describe('secrets', () => {
     beforeAll(setupApi);
 
     test('create, get, update, delete - password', () => {
-        expect.assertions(16);
+        expect.assertions(24);
 
         return Promise.all(paths.map(async (path) => {
             const secret = {
@@ -255,6 +256,49 @@ describe('secrets', () => {
             const id = postResp.data.id;
             const location = postResp.headers.location;
             expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            const getResp = await apiV1user.get(`${path}/${id}`);
+            expect(getResp.status).toBe(200);
+            expect(getResp.data).toEqual(Object.assign({}, secret, {id}));
+
+            secret.username = 'something-else';
+            const putResp = await apiV1user.put(`${path}/${id}`, secret);
+            expect(putResp.status).toBe(204);
+
+            const get2Resp = await apiV1user.get(`${path}/${id}`);
+            expect(get2Resp.status).toBe(200);
+            expect(get2Resp.data).toEqual(Object.assign({}, secret, {id}));
+
+            secret.kind = 'text';
+            const put2Resp = await apiV1user.put(`${path}/${id}`, secret);
+            expect(put2Resp.status).toBe(409);
+
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
+    test('create with id - password', () => {
+        expect.assertions(12);
+
+        return Promise.all(paths.map(async (path) => {
+            const secret = {
+                name: 'component.postgresql.password',
+                kind: 'password',
+                username: 'automation-hub',
+                password: `jai0eite3X${path}`
+            };
+
+            const id = uuidv4();
+
+            const putResp = await apiV1user.put(`${path}/${id}`, secret);
+            expect(putResp.status).toBe(404);
+
+            const put2Resp = await apiV1user.put(`${path}/${id}?create=1`, secret);
+            expect(put2Resp.status).toBe(201);
 
             const getResp = await apiV1user.get(`${path}/${id}`);
             expect(getResp.status).toBe(200);
