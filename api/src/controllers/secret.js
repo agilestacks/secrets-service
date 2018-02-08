@@ -17,7 +17,7 @@ const allowedEntities = ['environments', 'cloud-accounts', 'licenses', 'template
 const allowedKinds = [
     'password', 'cloudAccount', 'cloudAccessKeys', 'caPrivateKey',
     'certificate', 'sshKey', 'usernamePassword', 'text', 'license',
-    'loginToken'
+    'loginToken', 'gitAccessToken'
 ];
 const allowedFields = [
     'name', 'kind',
