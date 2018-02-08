@@ -21,6 +21,7 @@ const allowedKinds = [
 ];
 const allowedFields = [
     'name', 'kind',
+    'userId', 'groupId', 'groupName',
     'username', 'password', 'loginToken', 'licenseKey',
     'certificate', 'sshKey', 'caPrivateKey', 'text',
     'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId'
