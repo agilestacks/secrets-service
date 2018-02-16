@@ -7,10 +7,10 @@ NAMESPACE=${NAMESPACE:-automation-hub}
 KUBERNETES_SECRET_NAME=${KUBERNETES_SECRET_NAME:-vault-service-roles}
 
 # Create Policies
-${vault} write sys/policy/authentication-service-high-priv rules=@policy-auth-high.hcl
-${vault} write sys/policy/authentication-service-low-priv  rules=@policy-auth-low.hcl
-${vault} write sys/policy/automation-hub-high-priv         rules=@policy-hub-high.hcl
-${vault} write sys/policy/automation-hub-low-priv          rules=@policy-hub-low.hcl
+${vault} write sys/policy/authentication-service-high-priv policy=@policy-auth-high.hcl
+${vault} write sys/policy/authentication-service-low-priv  policy=@policy-auth-low.hcl
+${vault} write sys/policy/automation-hub-high-priv         policy=@policy-hub-high.hcl
+${vault} write sys/policy/automation-hub-low-priv          policy=@policy-hub-low.hcl
 
 # Enable AppRole authentication
 ${vault} auth-enable approle || true
