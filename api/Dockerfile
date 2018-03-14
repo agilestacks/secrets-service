@@ -10,6 +10,6 @@ RUN npm -q install --only=prod && npm -q cache clean --force
 COPY server.js /app/
 COPY src/ /app/src/
 
-RUN npm link winston
+# RUN npm link winston
 
 CMD [ "npm", "start" ]
