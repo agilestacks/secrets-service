@@ -7,6 +7,10 @@ meta:
     dir: .
 
 parameters:
+- name: terraform.bucket.name
+  env: STATE_BUCKET
+- name: terraform.bucket.region
+  env: STATE_REGION
 - name: dns.name
   default: default
   env: TF_VAR_name

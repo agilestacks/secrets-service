@@ -11,8 +11,8 @@ export TF_LOG_PATH        ?= .terraform/$(TF_VAR_name).$(TF_VAR_base_domain).log
 export TF_OPTS            ?= -no-color
 export TF_UPDATE          ?= -update
 
-export TF_VAR_backend_bucket   ?= terraform.agilestacks.com
-export TF_VAR_backend_region   ?= us-east-1
+export STATE_BUCKET   ?= terraform.agilestacks.com
+export STATE_REGION   ?= us-east-1
 
 export terraform          ?= terraform
 
@@ -23,8 +23,8 @@ init:
 	@rm -rf .terraform/$(TF_VAR_name).$(TF_VAR_base_domain)/*
 	$(terraform) init -get=true $(TF_CMD_OPTS) -force-copy  \
 		-backend=true -input=false \
-		-backend-config="bucket=$(TF_VAR_backend_bucket)" \
-		-backend-config="region=$(TF_VAR_backend_region)" \
+		-backend-config="bucket=$(STATE_BUCKET)" \
+		-backend-config="region=$(STATE_REGION)" \
 		-backend-config="key=$(COMPONENT_NAME)/$(TF_VAR_name).$(TF_VAR_base_domain)/terraform.tfstate" \
 		-backend-config="profile=$(AWS_PROFILE)" \
 		. .terraform/$(TF_VAR_name).$(TF_VAR_base_domain)
