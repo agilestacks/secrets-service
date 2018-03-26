@@ -262,7 +262,8 @@ module.exports = {
                         cloud: 'aws',
                         accessKey: 'AKIA****************',
                         secretKey: 'IqCFm0**********************************',
-                        sessionToken: '...'
+                        sessionToken: '...',
+                        ttl: 3600
                     };
                 } else {
                     throw new BadRequestError('The requested secret is not `cloudAccount` kind', 405);
