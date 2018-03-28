@@ -17,7 +17,7 @@ undeploy: delete-kubernetes-secret vault-connect policies-undeploy vault-disconn
 
 vault-connect:
 	$(HUB) invoke $(VAULT_COMPONENT_NAME) connect
-	$(HUB) invoke $(VAULT_COMPONENT_NAME) auth
+	$(HUB) invoke $(VAULT_COMPONENT_NAME) login
 .PHONY: vault-connect
 
 vault-disconnect:
