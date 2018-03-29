@@ -13,7 +13,7 @@ ${vault} write sys/policy/automation-hub-high-priv         policy=@policy-hub-hi
 ${vault} write sys/policy/automation-hub-low-priv          policy=@policy-hub-low.hcl
 
 # Enable AppRole authentication
-${vault} auth-enable approle || true
+${vault} auth enable approle || true
 
 # Create Roles
 for role in authentication-service-high-priv \
