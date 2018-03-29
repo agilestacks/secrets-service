@@ -12,17 +12,24 @@ requires:
 - kubernetes
 
 parameters:
-- name: component.secrets-service.app-roles.kubernetes-secret-name
-  value: vault-service-roles
-  env: KUBERNETES_SECRET_NAME
-- name: component.secrets-service.app-roles.vault-component-name
-  value: vault
-  env: VAULT_COMPONENT_NAME
-- name: component.secrets-service.namespace
-  default: automation-hub
-  env:  NAMESPACE
-- name: dns.domain
-  env: DOMAIN_NAME
+- name:  dns.domain
+  env:   DOMAIN_NAME
+- name:  component.secrets-service.namespace
+  value: automation-hub
+  env:   NAMESPACE
+- name:  component.secrets-service.app-roles
+  parameters:
+  - name:  kubernetes-secret-name
+    value: vault-service-roles
+    env:   KUBERNETES_SECRET_NAME
+  - name:  vault-component-name
+    value: vault
+    env:   VAULT_COMPONENT_NAME
+  - name:  initialized
+    empty: allow
+    env:   VAULT_APP_ROLES_INITIALIZED
+  - name:  secret
+    empty: allow
 
 templates:
   files: ["*.template"]
