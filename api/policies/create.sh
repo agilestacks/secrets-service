@@ -34,7 +34,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ${KUBERNETES_SECRET_NAME}
-  namespace: automation-hub
+  namespace: ${NAMESPACE}
   labels:
     provider: agilestacks.com
     project:  secrets-service
