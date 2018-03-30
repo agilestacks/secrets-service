@@ -12,16 +12,14 @@ parameters:
 - name: terraform.bucket.region
   env: STATE_REGION
 - name: dns.name
-  default: default
   env: TF_VAR_name
 - name: dns.baseDomain
-  default: stacks.delivery
   env: TF_VAR_base_domain
 - name: cloud.region
   kind: user
   env: AWS_DEFAULT_REGION
 - name: component.secrets-service.name
-  default: secrets-service
+  value: secrets-service
   env: COMPONENT_NAME
 
 outputs:

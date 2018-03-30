@@ -15,10 +15,10 @@ parameters:
 - name: component.secrets-service
   parameters:
   - name: namespace
-    default: automation-hub
+    value: automation-hub
     env:  NAMESPACE
   - name: name
-    default: secrets-service
+    value: secrets-service
   - name: image
     env:  IMAGE
 - name: dns.domain
