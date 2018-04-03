@@ -77,17 +77,17 @@ module.exports = app
     .use(async (ctx, next) => {
         const {method, url, request, logger} = ctx;
 
-        logger.debug('HTTP <<<: %s %s', method, url);
-        logger.silly('HTTP <<<: X-Secrets-Token: %s', request.headers['x-secrets-token']);
-        logger.silly('HTTP <<<: %j', request.body);
+        logger.debug('HTTP <<< %s %s', method, url);
+        logger.silly('HTTP <<< X-Secrets-Token: %s', request.headers['x-secrets-token']);
+        logger.silly('HTTP <<< %j', request.body);
         try {
             await next();
         } catch (e) {
             logger.warn('Error', e);
         }
 
-        logger.debug('HTTP ===: %d', ctx.status);
-        logger.silly('HTTP ===: %j', ctx.body);
+        logger.debug('HTTP === %d', ctx.status);
+        logger.silly('HTTP === %j', ctx.body);
     })
     .use(async (ctx, next) => {
         try {
