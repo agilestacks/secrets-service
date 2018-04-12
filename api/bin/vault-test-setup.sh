@@ -12,12 +12,12 @@ sleep 1
 export VAULT_ADDR="http://$VAULT_DEV_LISTEN_ADDRESS"
 export VAULT_TOKEN=$root_token
 
-$vault write sys/policy/authentication-service-high-priv rules=@policies/policy-auth-high.hcl
-$vault write sys/policy/authentication-service-low-priv  rules=@policies/policy-auth-low.hcl
-$vault write sys/policy/automation-hub-high-priv         rules=@policies/policy-hub-high.hcl
-$vault write sys/policy/automation-hub-low-priv          rules=@policies/policy-hub-low.hcl
+$vault write sys/policy/authentication-service-high-priv policy=@policies/policy-auth-high.hcl
+$vault write sys/policy/authentication-service-low-priv  policy=@policies/policy-auth-low.hcl
+$vault write sys/policy/automation-hub-high-priv         policy=@policies/policy-hub-high.hcl
+$vault write sys/policy/automation-hub-low-priv          policy=@policies/policy-hub-low.hcl
 
-$vault auth-enable approle
+$vault auth enable approle
 for role in authentication-service-high-priv \
             authentication-service-low-priv \
             automation-hub-high-priv \
