@@ -25,7 +25,7 @@ init:
 		-backend=true -input=false \
 		-backend-config="bucket=$(STATE_BUCKET)" \
 		-backend-config="region=$(STATE_REGION)" \
-		-backend-config="key=$(COMPONENT_NAME)/$(TF_VAR_name).$(TF_VAR_base_domain)/terraform.tfstate" \
+		-backend-config="key=$(TF_VAR_name).$(TF_VAR_base_domain)/secrets-service/$(COMPONENT_NAME)/terraform.tfstate" \
 		-backend-config="profile=$(AWS_PROFILE)" \
 		. .terraform/$(TF_VAR_name).$(TF_VAR_base_domain)
 .PHONY: init
