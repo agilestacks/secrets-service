@@ -15,7 +15,7 @@ const stubSecrets = new Map();
 
 const allowedEntities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances', 'service-accounts'];
 const allowedKinds = [
-    'password', 'cloudAccount', 'cloudAccessKeys', 'caPrivateKey',
+    'password', 'cloudAccount', 'cloudAccessKeys', 'privateKey',
     'certificate', 'sshKey', 'usernamePassword', 'text', 'license',
     'loginToken', 'gitAccessToken'
 ];
@@ -23,7 +23,7 @@ const allowedFields = [
     'name', 'kind',
     'userId', 'groupId', 'groupName',
     'username', 'password', 'loginToken', 'licenseKey',
-    'certificate', 'sshKey', 'caPrivateKey', 'text',
+    'privateKey', 'certificate', 'sshKey', 'text',
     'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId'
 ];
 
