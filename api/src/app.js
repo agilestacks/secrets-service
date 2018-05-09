@@ -54,6 +54,7 @@ router.post('/secrets/:entityKind/:entityId/copy/:fromEntityKind/:fromEntityId/:
 router.put('/secrets/:entityKind/:entityId/:id', secretC.update);
 router.get('/secrets/:entityKind/:entityId/:id', secretC.get);
 router.del('/secrets/:entityKind/:entityId/:id', secretC.delete);
+router.del('/secrets/:entityKind/:entityId', secretC.deleteAll);
 router.post('/secrets/:entityKind/:entityId/:id/session-keys', secretC.sessionKeys);
 
 router.post('/tokens/renew', tokenC.renew);

@@ -397,6 +397,30 @@ The secret `kind` must match otherwise `409 Conflict` will be returned.
 + Response 504
 
 
+### Delete all Entity Secrets [DELETE /secrets/{entityKind}/{entityId}]
+
+Recursively delete all secrets under specific path.
+
++ Parameters
+    + entityKind: `instances` - Entity type identifier
+    + entityId: `123` (string) - ID of the Entity
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
++ Response 204
+
++ Response 404
+
++ Response 403
+
++ Response 502
+
++ Response 504
+
 
 ## User [/users/{userId}]
 

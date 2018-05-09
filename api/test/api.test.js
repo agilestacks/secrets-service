@@ -358,6 +358,33 @@ describe('secrets', () => {
         }));
     });
 
+    test('delete all', () => {
+        expect.assertions(22);
+
+        return Promise.all(paths.map(async (path) => {
+            const ids = [uuidv4(), uuidv4(), `${uuidv4()}:${uuidv4()}`];
+            const putResponses = await Promise.all(
+                ids.map(id => apiV1user.put(`${path}/${id}?create=1`, secretTemplate(`${path}/${id}`)))
+            );
+            putResponses.forEach(resp => expect(resp.status).toBe(201));
+
+            const getResponses = await Promise.all(
+                ids.map(id => apiV1user.get(`${path}/${id}`))
+            );
+            getResponses.forEach(resp => expect(resp.status).toBe(200));
+
+            const deleteAllResp = await apiV1user.delete(path);
+            expect(deleteAllResp.status).toBe(204);
+            const deleteAll2Resp = await apiV1user.delete(path);
+            expect(deleteAll2Resp.status).toBe(404);
+
+            const getNoneResponses = await Promise.all(
+                ids.map(id => apiV1user.get(`${path}/${id}`))
+            );
+            getNoneResponses.forEach(resp => expect(resp.status).toBe(404));
+        }));
+    });
+
     // TODO `cloudAccount` is only for /cloud-accounts
     test('cloud account - mask', () => {
         expect.assertions(30);

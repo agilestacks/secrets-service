@@ -2,8 +2,8 @@ const crypto = require('crypto');
 const aws = require('aws-sdk');
 const awsConfig = require('aws-config');
 const uuidv4 = require('uuid/v4');
-const {pick: lopick} = require('lodash');
-const {api, withToken, proxyErrorStatus} = require('../vault');
+const {pick: lopick, isEmpty, partition} = require('lodash');
+const {api, withToken, goodStatus, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
 const {NotFoundError, BadRequestError, ServerError} = require('../errors');
 
@@ -210,6 +210,56 @@ module.exports = {
             } else {
                 ctx.status = 204;
             }
+        }
+    },
+
+    async deleteAll(ctx) {
+        const {
+            params: {entityId, entityKind}
+        } = ctx;
+
+        checkEntityKind(entityKind);
+        if (entityId.startsWith('stub-')) {
+            ctx.status = 204;
+        } else {
+            const wvt = withToken(ctx.vaultToken);
+            const root = `/secret/${entityKind}/${entityId}/secrets`;
+
+            let errorStatus;
+            const recurse = async (subpath) => {
+                const path = `${root}/${subpath}`;
+                const resp = await api.get(`${path}?list=true`, wvt);
+                if (resp.status !== 200) {
+                    if (resp.status !== 404) {
+                        logger.warn('Unexpected status %d from Vault listing secrets under `%s`: %j',
+                            resp.status, path, resp.data);
+                        errorStatus = proxyErrorStatus(resp);
+                    }
+                    return [];
+                }
+                const {data: {keys}} = resp.data;
+                if (isEmpty(keys)) {
+                    logger.debug('No secrets to delete under `%s`', path);
+                    return [];
+                }
+                const [subtrees, leafs] = partition(keys, key => key.endsWith('/'));
+                return leafs.concat(
+                    ...(await Promise.all(subtrees.map(key => recurse(`${subpath}${key}`)))))
+                    .map(key => `${subpath}${key}`);
+            };
+
+            const keys = await recurse('');
+            if (isEmpty(keys)) {
+                ctx.status = errorStatus || 404;
+                return;
+            }
+            const responses = await Promise.all(keys.map(key => api.delete(`${root}/${key}`, wvt)));
+            responses.filter(resp => resp.status !== 204)
+                .forEach(({status, config: {url}, data}) =>
+                    logger.warn('Unexpected status %d from Vault deleting secret `%s`: %j',
+                        status, url, data)
+                );
+            ctx.status = goodStatus(...responses) ? 204 : proxyErrorStatus(...responses);
         }
     },
 
