@@ -50,6 +50,7 @@ router.put('/users/:id/:entityKind', userC.update);
 router.post('/users/:id/login', userC.login);
 
 router.post('/secrets/:entityKind/:entityId', secretC.create);
+router.post('/secrets/:entityKind/:entityId/copy/:fromEntityKind/:fromEntityId/:fromId', secretC.createFrom);
 router.put('/secrets/:entityKind/:entityId/:id', secretC.update);
 router.get('/secrets/:entityKind/:entityId/:id', secretC.get);
 router.del('/secrets/:entityKind/:entityId/:id', secretC.delete);

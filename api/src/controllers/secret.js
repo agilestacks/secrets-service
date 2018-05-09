@@ -246,6 +246,76 @@ module.exports = {
         }
     },
 
+    async createFrom(ctx) {
+        const {
+            params: {entityId, entityKind, fromEntityId, fromEntityKind, fromId},
+            request: {body}
+        } = ctx;
+
+        checkEntityKind(entityKind);
+        checkEntityKind(fromEntityKind);
+        const patch = lopick(body, allowedFields);
+        if (patch.kind) {
+            checkSecretKind(patch.kind);
+        }
+
+        let fromSecret;
+        if (fromEntityId.startsWith('stub-')) {
+            fromSecret = stubSecrets.get(fromId);
+            if (!fromSecret) {
+                throw new NotFoundError();
+            }
+        } else {
+            const wvt = withToken(ctx.vaultToken);
+            const path = `/secret/${fromEntityKind}/${fromEntityId}/secrets/${fromId}`;
+            const resp = await api.get(path, wvt);
+            if (resp.status !== 200) {
+                if (resp.status === 404) {
+                    throw new NotFoundError();
+                } else {
+                    logger.warn('Unexpected status %d from Vault reading secret `%s`: %j',
+                        resp.status, path, resp.data);
+                    ctx.status = proxyErrorStatus(resp);
+                    return;
+                }
+            } else {
+                fromSecret = resp.data.data;
+            }
+        }
+
+        if (patch.kind && patch.kind !== fromSecret.kind) {
+            const msg = 'Secret `kind` doesn\'t match';
+            logger.error(msg, {oldKind: fromSecret.kind, newKind: patch.kind});
+            throw new BadRequestError(msg, 409);
+        }
+
+        // TODO is there a better way?
+        const fromPath = `/copy/${fromEntityKind}/${fromEntityId}/${fromId}`;
+        if (!ctx.path.endsWith(fromPath)) {
+            throw new ServerError(`Expected ${ctx.path} to end with ${fromPath}`);
+        }
+        const resourceBase = ctx.path.substring(0, ctx.path.length - fromPath.length);
+
+        const secret = {...fromSecret, ...patch};
+
+        const id = uuidv4();
+        if (entityId.startsWith('stub-')) {
+            stubSecrets.set(id, secret);
+        } else {
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const resp = await api.put(path, secret, withToken(ctx.vaultToken));
+            if (resp.status !== 204) {
+                logger.warn('Unexpected status %d from Vault creating secret `%s` / `%s`: %j',
+                    resp.status, path, secret.name, resp.data);
+                ctx.status = proxyErrorStatus(resp);
+                return;
+            }
+        }
+        ctx.status = 201;
+        ctx.set('Location', `${resourceBase}/${id}`);
+        ctx.body = {id};
+    },
+
     async sessionKeys(ctx) {
         const {
             params: {id, entityId, entityKind},

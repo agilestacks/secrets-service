@@ -303,13 +303,67 @@ describe('secrets', () => {
 
             const getResp = await apiV1user.get(`${path}/${id}`);
             expect(getResp.status).toBe(200);
-            expect(getResp.data).toEqual(Object.assign({}, secret, {id}));
+            expect(getResp.data).toEqual({...secret, ...{id}});
 
             const deleteResp = await apiV1user.delete(`${path}/${id}`);
             expect(deleteResp.status).toBe(204);
 
             const getNoneResp = await apiV1user.get(`${path}/${id}`);
             expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
+    test('create by example - password', () => {
+        expect.assertions(30);
+
+        return Promise.all(paths.map(async (path) => {
+            const secret = {
+                name: 'component.postgresql.password',
+                kind: 'password',
+                username: 'automation-hub',
+                password: `jai0eite3X${path}`
+            };
+            // create first secret
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
+
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            // create second secret by copying first secret
+            const fromPath = `${path}/${id}`.replace(/^\/secrets\//, '');
+            const patch = {username: 'secrets-service'};
+            const post2Resp = await apiV1user.post(`${path}/copy/${fromPath}`, patch);
+            expect(post2Resp.status).toBe(201);
+            expect(post2Resp.headers.location).toBeDefined();
+            expect(post2Resp.data.id).toBeDefined();
+
+            const copyId = post2Resp.data.id;
+            const location2 = post2Resp.headers.location;
+            expect(location2).toBe(`${apiPrefix}${path}/${copyId}`);
+
+            // request second secret and compare
+            const getResp = await apiV1user.get(`${path}/${copyId}`);
+            expect(getResp.status).toBe(200);
+            expect(getResp.data).toEqual({...secret, ...patch, ...{id: copyId}});
+
+            // attempt to create third secret with incompatible `kind`
+            const post3Resp = await apiV1user.post(`${path}/copy/${fromPath}`, {kind: 'privateKey'});
+            expect(post3Resp.status).toBe(409);
+
+            // delete secrets
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+            const delete2Resp = await apiV1user.delete(`${path}/${copyId}`);
+            expect(delete2Resp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+            const getNone2Resp = await apiV1user.get(`${path}/${copyId}`);
+            expect(getNone2Resp.status).toBe(404);
         }));
     });
 

@@ -244,6 +244,70 @@ restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.co
 + Response 504
 
 
+### Create Secret by example [POST /secrets/{entityKind}/{entityId}/copy/{fromEntityKind}/{fromEntityId}/{fromId}]
+
+Create a new secret by copying existing secret, optionally changing or adding secret's fields.
+If supplied, `kind` must match source secret `kind`.
+
++ Parameters
+    + entityKind: `instances` - Entity type identifier
+    + entityId: `123` (string) - ID of the Entity
+    + fromEntityKind: `instances` - Source Entity type identifier
+    + fromEntityId: `102` (string) - Source ID of the Entity
+    + fromId: `4b71b933-f1e0-4a63-a113-6fb813cfb4a7` (string) - Source Secret ID
+
++ Request (application/json; charset=utf-8)
+
+    + Headers
+
+            X-Secrets-Token: user-token
+
+    + Body
+
+            {
+                "kind": "privateKey"
+            }
+
++ Response 201 (application/json; charset=utf-8)
+
+    + Headers
+
+            Location: /api/v1/instances/123/secrets/02a669c0-543b-432f-a11d-fb21f29c7200
+
+    + Body
+
+            {
+                "id": "02a669c0-543b-432f-a11d-fb21f29c7200"
+            }
+
++ Response 403
+
++ Response 409
+
++ Response 400 (application/json; charset=utf-8)
+
+            "errors": [
+                    {
+                        "type": "badRequest",
+                        "detail": "Error parse JSON input",
+                        "meta": {
+                            "errors": {
+                                "type": "badRequest",
+                                "detail": "Error parse JSON input",
+                                "meta": {
+                                    "stack":"Error: Error parse JSON input...js:76:19)"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+
++ Response 502
+
++ Response 504
+
+
 ### Update Secret [PUT]
 
 The secret `kind` must match otherwise `409 Conflict` will be returned.
