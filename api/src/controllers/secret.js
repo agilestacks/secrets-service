@@ -148,7 +148,7 @@ module.exports = {
             }
         } else {
             const wvt = withToken(ctx.vaultToken);
-            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id.replace(':', '/')}`;
             const getResp = await api.get(path, wvt);
             if (getResp.status !== 200) {
                 if (getResp.status === 404) {
@@ -197,7 +197,7 @@ module.exports = {
             }
         } else {
             const wvt = withToken(ctx.vaultToken);
-            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id.replace(':', '/')}`;
             const resp = await api.delete(path, wvt);
             if (resp.status !== 204) {
                 if (resp.status === 404) {
@@ -229,7 +229,7 @@ module.exports = {
             }
         } else {
             const wvt = withToken(ctx.vaultToken);
-            const path = `/secret/${entityKind}/${entityId}/secrets/${id}`;
+            const path = `/secret/${entityKind}/${entityId}/secrets/${id.replace(':', '/')}`;
             const resp = await api.get(path, wvt);
             if (resp.status !== 200) {
                 if (resp.status === 404) {
