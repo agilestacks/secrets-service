@@ -69,7 +69,7 @@ function maskKey(key) {
 }
 
 function maskSecret(secret) {
-    const masked = Object.assign({}, secret);
+    const masked = {...secret};
     if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
         if (masked.roleArn) masked.roleArn = maskRole(secret.roleArn);
         if (masked.externalId) masked.externalId = maskExternalId(masked.externalId);
@@ -223,7 +223,7 @@ module.exports = {
             const secret = stubSecrets.get(id);
             if (secret) {
                 ctx.status = 200;
-                ctx.body = Object.assign({}, secret, {id});
+                ctx.body = {...secret, ...{id}};
             } else {
                 throw new NotFoundError();
             }
@@ -241,7 +241,7 @@ module.exports = {
                 }
             } else {
                 ctx.status = 200;
-                ctx.body = Object.assign({}, maskSecret(resp.data.data), {id});
+                ctx.body = {...maskSecret(resp.data.data), ...{id}};
             }
         }
     },

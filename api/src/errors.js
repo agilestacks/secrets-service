@@ -24,7 +24,7 @@ class ServerError extends ApiError {
             type: errorTypes[this.status] || errorTypes[500],
             source: this.source,
             detail: this.message,
-            meta: Object.assign({}, this.meta, {stack: this.stack})
+            meta: {...this.meta, ...{stack: this.stack}}
         }];
     }
 }
@@ -41,7 +41,7 @@ class BadRequestError extends ApiError {
         return {
             type: errorTypes[this.status] || errorTypes[400],
             detail: this.message,
-            meta: Object.assign({}, this.meta, {stack: this.stack})
+            meta: {...this.meta, ...{stack: this.stack}}
         };
     }
 }
@@ -60,9 +60,7 @@ class ErrorWrapper extends ApiError {
         return [{
             type: errorTypes[this.status] || errorTypes[500],
             detail: this.error.message,
-            meta: Object.assign({}, this.meta, {
-                stack: this.stack
-            })
+            meta: {...this.meta, ...{stack: this.stack}}
         }];
     }
 }
@@ -98,7 +96,7 @@ class NotFoundError extends ApiError {
         return [{
             type: errorTypes[this.status],
             detail: this.message,
-            meta: Object.assign({}, this.meta, {stack: this.stack})
+            meta: {...this.meta, ...{stack: this.stack}}
         }];
     }
 }

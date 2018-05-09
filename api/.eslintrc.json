@@ -14,7 +14,13 @@
     "max-len": ["error", 120],
     "no-param-reassign": ["error", {"props": true, "ignorePropertyModificationsFor": ["ctx"]}],
     "object-curly-spacing": ["error", "never"],
-    "space-before-function-paren": ["error", "never"]
+    "space-before-function-paren": ["error", {
+      "named": "never",
+      "asyncArrow": "always"
+    }],
+    "object-curly-newline": "off",
+    "function-paren-newline": "off",
+    "prefer-promise-reject-errors": "off"
   },
   "env": {
     "node": true

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-destructuring */
 const crypto = require('crypto');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
@@ -26,7 +27,7 @@ const serviceRoles = (highPrivRoleId, lowPrivRoleId) => {
 };
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
 
-const apiV1open = axios.create(Object.assign({}, apiConfig, withApiPrefix));
+const apiV1open = axios.create({...apiConfig, ...withApiPrefix});
 
 describe('basic routing', () => {
     test('ping', async () => {
@@ -68,10 +69,10 @@ describe('users', () => {
             serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
         const tokenHigh = loginResp.data.highPrivToken;
         const tokenLow = loginResp.data.lowPrivToken;
-        const config = Object.assign({}, apiConfig, withApiPrefix);
+        const config = {...apiConfig, ...withApiPrefix};
 
-        apiV1serviceHigh = axios.create(Object.assign({}, config, withToken(tokenHigh)));
-        apiV1serviceLow = axios.create(Object.assign({}, config, withToken(tokenLow)));
+        apiV1serviceHigh = axios.create({...config, ...withToken(tokenHigh)});
+        apiV1serviceLow = axios.create({...config, ...withToken(tokenLow)});
     };
 
     beforeAll(setupApi);
@@ -219,10 +220,10 @@ describe('secrets', () => {
             serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
         const tokenHigh = loginResp.data.highPrivToken;
         const tokenLow = loginResp.data.lowPrivToken;
-        const config = Object.assign({}, apiConfig, withApiPrefix);
+        const config = {...apiConfig, ...withApiPrefix};
 
-        apiV1serviceHigh = axios.create(Object.assign({}, config, withToken(tokenHigh)));
-        apiV1serviceLow = axios.create(Object.assign({}, config, withToken(tokenLow)));
+        apiV1serviceHigh = axios.create({...config, ...withToken(tokenHigh)});
+        apiV1serviceLow = axios.create({...config, ...withToken(tokenLow)});
 
         const user = `/users/okta-${randomSuf()}`;
         const putResp = await apiV1serviceHigh.put(user);
@@ -232,7 +233,7 @@ describe('secrets', () => {
         const userLoginResp = await apiV1serviceLow.post(`${user}/login`, {roleId});
         const tokenUser = userLoginResp.data.token;
 
-        apiV1user = axios.create(Object.assign({}, config, withToken(tokenUser)));
+        apiV1user = axios.create({...config, ...withToken(tokenUser)});
     };
 
     beforeAll(setupApi);
@@ -259,7 +260,7 @@ describe('secrets', () => {
 
             const getResp = await apiV1user.get(`${path}/${id}`);
             expect(getResp.status).toBe(200);
-            expect(getResp.data).toEqual(Object.assign({}, secret, {id}));
+            expect(getResp.data).toEqual({...secret, ...{id}});
 
             secret.username = 'something-else';
             const putResp = await apiV1user.put(`${path}/${id}`, secret);
@@ -267,7 +268,7 @@ describe('secrets', () => {
 
             const get2Resp = await apiV1user.get(`${path}/${id}`);
             expect(get2Resp.status).toBe(200);
-            expect(get2Resp.data).toEqual(Object.assign({}, secret, {id}));
+            expect(get2Resp.data).toEqual({...secret, ...{id}});
 
             secret.kind = 'text';
             const put2Resp = await apiV1user.put(`${path}/${id}`, secret);

@@ -2,7 +2,7 @@ const winston = require('winston');
 
 function loggerFactory(additionalMeta) {
     const rewriters = additionalMeta
-        ? [(level, msg, meta) => Object.assign({}, meta, additionalMeta)]
+        ? [(level, msg, meta) => ({...meta, ...additionalMeta})]
         : undefined;
 
     return new winston.Logger({

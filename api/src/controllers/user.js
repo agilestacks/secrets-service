@@ -24,7 +24,7 @@ path "auth/token/revoke-self" {
 
 module.exports = {
     async create(ctx) {
-        const id = ctx.params.id;
+        const {params: {id}} = ctx;
         if (id.startsWith('stub-')) {
             const roleId = 'f2db06c7-1b3c-9262-1116-fa1842a5c567';
             const user = {id, roleId};
@@ -86,7 +86,7 @@ module.exports = {
     },
 
     async delete(ctx) {
-        const id = ctx.params.id;
+        const {params: {id}} = ctx;
         if (id.startsWith('stub-')) {
             const deleted = stubUsers.delete(id);
             if (deleted) {
@@ -108,7 +108,7 @@ module.exports = {
                     const policiesResp = await Promise.all(policies
                         .map(policy => api.delete(`/sys/policy/${policy}`, wvt))
                     );
-                                                          // allow missing policies
+                    // allow missing policies
                     if (goodStatus(tokenPolicyDelResp, ...policiesResp.filter(response => !response.status === 404))) {
                         ctx.status = 204;
                     } else {
@@ -177,8 +177,7 @@ module.exports = {
     },
 
     async login(ctx) {
-        const id = ctx.params.id;
-        const roleId = ctx.request.body.roleId;
+        const {params: {id}, request: {body: {roleId}}} = ctx;
         if (roleId) {
             if (id.startsWith('stub-')) {
                 const user = stubUsers.get(id);
