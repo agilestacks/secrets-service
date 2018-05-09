@@ -11,7 +11,7 @@ const apiPrefix = '/api/v1';
 const apiConfig = {
     baseURL: 'http://localhost:3002',
     adapter: httpAdapter,
-    timeout: 2000,
+    timeout: 3000,
     maxContentLength: 65536,
     validateStatus: () => true
 };
@@ -214,6 +214,12 @@ describe('secrets', () => {
     let apiV1user;
 
     const paths = ['/secrets/environments/env-1', '/secrets/cloud-accounts/clacc-1'];
+    const secretTemplate = add => ({
+        name: 'component.postgresql.password',
+        kind: 'password',
+        username: 'automation-hub',
+        password: `jai0eite3X${add}`
+    });
 
     const setupApi = async () => {
         const loginResp = await apiV1open.post(authServiceLoginPath,
@@ -242,12 +248,7 @@ describe('secrets', () => {
         expect.assertions(24);
 
         return Promise.all(paths.map(async (path) => {
-            const secret = {
-                name: 'component.postgresql.password',
-                kind: 'password',
-                username: 'automation-hub',
-                password: `jai0eite3X${path}`
-            };
+            const secret = secretTemplate(path);
 
             const postResp = await apiV1user.post(path, secret);
             expect(postResp.status).toBe(201);
@@ -282,16 +283,11 @@ describe('secrets', () => {
         }));
     });
 
-    test('create with id - password', () => {
+    test('create with id', () => {
         expect.assertions(12);
 
         return Promise.all(paths.map(async (path) => {
-            const secret = {
-                name: 'component.postgresql.password',
-                kind: 'password',
-                username: 'automation-hub',
-                password: `jai0eite3X${path}`
-            };
+            const secret = secretTemplate(path);
 
             const id = uuidv4();
 
@@ -313,16 +309,11 @@ describe('secrets', () => {
         }));
     });
 
-    test('create by example - password', () => {
+    test('create by example', () => {
         expect.assertions(30);
 
         return Promise.all(paths.map(async (path) => {
-            const secret = {
-                name: 'component.postgresql.password',
-                kind: 'password',
-                username: 'automation-hub',
-                password: `jai0eite3X${path}`
-            };
+            const secret = secretTemplate(path);
             // create first secret
             const postResp = await apiV1user.post(path, secret);
             expect(postResp.status).toBe(201);
