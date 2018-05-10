@@ -11,7 +11,7 @@ NAMESPACE     ?= automation-hub
 kubectl       ?= kubectl --context=$(DOMAIN_NAME) --namespace=$(NAMESPACE)
 telepresence  ?= telepresence -s secrets-service --context $(DOMAIN_NAME) --namespace $(NAMESPACE) --expose 3002
 docker        ?= docker
-aws           ?= aw
+aws           ?= aws
 
 build:
 	@ $(docker) build -t $(IMAGE):$(IMAGE_VERSION) .
