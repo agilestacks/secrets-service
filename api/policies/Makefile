@@ -59,6 +59,6 @@ backup:
 	$(kubectl) get secret $(KUBERNETES_SECRET_NAME)
 	@echo Outputs:
 	@echo component.secrets-service.app-roles.initialized = true
-	@echo component.secrets-service.app-roles.secret = $$($(kubectl) get secret $(KUBERNETES_SECRET_NAME) -o yaml | base64)
+	@echo component.secrets-service.app-roles.secret = $$($(kubectl) get secret $(KUBERNETES_SECRET_NAME) -o yaml | grep -v resourceVersion: | base64)
 	@echo
 .PHONY: backup
