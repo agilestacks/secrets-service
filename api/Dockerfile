@@ -1,5 +1,5 @@
-FROM node:8.11
-MAINTAINER Arkadi Shishlov <arkadi@agilestacks.com>
+FROM node:10.5.0
+LABEL maintainer="Arkadi Shishlov <arkadi@agilestacks.com>"
 
 RUN mkdir /app
 WORKDIR /app
