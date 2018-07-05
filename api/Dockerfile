@@ -1,4 +1,5 @@
-FROM node:10.5.0
+FROM node:10.5
+
 LABEL maintainer="Arkadi Shishlov <arkadi@agilestacks.com>"
 
 RUN mkdir /app
