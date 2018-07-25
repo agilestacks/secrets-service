@@ -436,7 +436,8 @@ describe('secrets', () => {
                 name: 'customer.role',
                 kind: 'cloudAccount',
                 cloud: 'aws',
-                roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution'
+                roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution',
+                duration: 1234
             };
 
             const postResp = await apiV1user.post(path, secret);
@@ -455,7 +456,7 @@ describe('secrets', () => {
             expect(keysResp.data.accessKey).toBeDefined();
             expect(keysResp.data.secretKey).toBeDefined();
             expect(keysResp.data.sessionToken).toBeDefined();
-            expect(keysResp.data.ttl).toBeDefined();
+            expect(keysResp.data.ttl).toBe(secret.duration);
 
             const deleteResp = await apiV1user.delete(`${path}/${id}`);
             expect(deleteResp.status).toBe(204);

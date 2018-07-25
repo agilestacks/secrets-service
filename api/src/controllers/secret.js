@@ -24,26 +24,26 @@ const allowedFields = [
     'userId', 'groupId', 'groupName',
     'username', 'password', 'loginToken', 'licenseKey',
     'privateKey', 'certificate', 'sshKey', 'text',
-    'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId'
+    'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId', 'duration'
 ];
 
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
 
-function assumeRole(roleName, externalId, purpose) {
+function assumeRole(roleName, externalId, duration, purpose) {
     const prefix = purpose.substring(0, 57).replace(/[^\w+=,.@-]/g, '-');
     const params = {
         RoleArn: roleName,
         ExternalId: externalId,
         RoleSessionName: `${prefix}-${randomSuf()}`, // max length is 64
-        DurationSeconds: stsTtl
+        DurationSeconds: duration
     };
     return sts.assumeRole(params).promise();
 }
 
-function getSession(accessKeyId, secretAccessKey) {
+function getSessionToken(accessKeyId, secretAccessKey, duration) {
     const accountSts = new aws.STS(awsConfig({accessKeyId, secretAccessKey}));
     const params = {
-        DurationSeconds: stsTtl
+        DurationSeconds: duration
     };
     return accountSts.getSessionToken(params).promise();
 }
@@ -383,7 +383,7 @@ module.exports = {
                         accessKey: 'AKIA****************',
                         secretKey: 'IqCFm0**********************************',
                         sessionToken: '...',
-                        ttl: 3600
+                        ttl: secret.duration || stsTtl
                     };
                 } else {
                     throw new BadRequestError('The requested secret is not `cloudAccount` kind', 405);
@@ -405,13 +405,23 @@ module.exports = {
             } else {
                 const secret = resp.data.data;
                 if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
+                    let {duration} = body || {};
+                    const secretDuration = parseInt(secret.duration, 10);
+                    if (!duration) {
+                        duration = secretDuration || stsTtl;
+                    }
+                    if (secretDuration && duration > secretDuration) {
+                        duration = secretDuration;
+                    }
+                    duration = parseInt(duration, 10);
+
                     let stsReply;
                     if (secret.roleArn) {
                         const purpose = (body && body.purpose)
                             ? body.purpose
                             : 'automation';
                         try {
-                            stsReply = await assumeRole(secret.roleArn, secret.externalId, purpose);
+                            stsReply = await assumeRole(secret.roleArn, secret.externalId, duration, purpose);
                         } catch (err) {
                             throw new ServerError(
                                 `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`,
@@ -420,10 +430,10 @@ module.exports = {
                         }
                     } else if (secret.accessKey && secret.secretKey) {
                         try {
-                            stsReply = await getSession(secret.accessKey, secret.secretKey);
+                            stsReply = await getSessionToken(secret.accessKey, secret.secretKey, duration);
                         } catch (err) {
                             throw new ServerError(
-                                `AWS STS error opening session for '${maskKey(secret.accessKey)}': ${err}`,
+                                `AWS STS error getting session token for '${maskKey(secret.accessKey)}': ${err}`,
                                 {status: 502}
                             );
                         }
@@ -441,7 +451,7 @@ module.exports = {
                         accessKey: creds.AccessKeyId,
                         secretKey: creds.SecretAccessKey,
                         sessionToken: creds.SessionToken,
-                        ttl: stsTtl
+                        ttl: duration
                     };
                 } else {
                     throw new BadRequestError(
