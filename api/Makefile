@@ -2,9 +2,9 @@
 
 export AWS_DEFAULT_REGION ?= us-east-2
 
-DOMAIN_NAME   ?= stack.delivery
+DOMAIN_NAME   ?= dev.kubernetes.delivery
 REGISTRY      ?= $(subst https://,,$(lastword $(shell aws ecr get-login --region $(AWS_DEFAULT_REGION))))
-IMAGE         ?= $(REGISTRY)/agilestacks/$(NAME)/secrets-service
+IMAGE         ?= $(REGISTRY)/agilestacks/$(DOMAIN_NAME)/secrets-service
 IMAGE_VERSION ?= $(shell git rev-parse HEAD | colrm 7)
 NAMESPACE     ?= automation-hub
 
