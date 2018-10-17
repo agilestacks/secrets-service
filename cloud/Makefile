@@ -16,7 +16,7 @@ export STATE_REGION   ?= us-east-1
 
 export terraform          ?= terraform
 
-deploy: init plan apply
+deploy: init import plan apply
 
 init:
 	@mkdir -p .terraform/$(TF_VAR_name).$(TF_VAR_base_domain)
@@ -50,3 +50,8 @@ undeploy: init
 		$(terraform) plan $(TF_OPTS) -destroy -refresh=true -module-depth=-1 -out=terraform.tfplan
 	$(MAKE) apply
 .PHONY: undeploy
+
+import:
+	-cd .terraform/$(TF_VAR_name).$(TF_VAR_base_domain) && \
+		$(terraform) import $(TF_OPTS) module.ecr.aws_ecr_repository.main agilestacks/$(TF_VAR_name).$(TF_VAR_base_domain)/secrets-service
+.PHONY: import
