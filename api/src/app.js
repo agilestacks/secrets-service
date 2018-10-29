@@ -60,18 +60,10 @@ router.post('/secrets/:entityKind/:entityId/:id/session-keys', secretC.sessionKe
 router.post('/tokens/renew', tokenC.renew);
 router.post('/tokens/revoke', tokenC.revoke);
 
-const idGenerator = {
-    id: new Date().getTime(),
-    next() {
-        this.id = (this.id % (Number.MAX_SAFE_INTEGER - 1)) + 1;
-        return this.id.toString(36);
-    }
-};
-
 module.exports = app
     .use(parser())
     .use(async (ctx, next) => {
-        ctx.logger = loggerFactory({requestId: idGenerator.next()});
+        ctx.logger = loggerFactory();
         await next();
     })
     .use(pingRouter.routes())

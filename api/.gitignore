@@ -3,3 +3,4 @@ report.html
 /rev.txt
 vault-service-roles.json
 telepresence.log
+.envrc

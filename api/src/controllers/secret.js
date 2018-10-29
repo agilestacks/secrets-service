@@ -255,9 +255,8 @@ module.exports = {
             }
             const responses = await Promise.all(keys.map(key => api.delete(`${root}/${key}`, wvt)));
             responses.filter(resp => resp.status !== 204)
-                .forEach(({status, config: {url}, data}) =>
-                    logger.warn('Unexpected status %d from Vault deleting secret `%s`: %j',
-                        status, url, data)
+                .forEach(({status, config: {url}, data}) => logger
+                    .warn('Unexpected status %d from Vault deleting secret `%s`: %j', status, url, data)
                 );
             ctx.status = goodStatus(...responses) ? 204 : proxyErrorStatus(...responses);
         }

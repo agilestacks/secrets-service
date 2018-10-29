@@ -1,4 +1,4 @@
-FROM node:10.5
+FROM node:10.13
 
 LABEL maintainer="Arkadi Shishlov <arkadi@agilestacks.com>"
 
@@ -10,7 +10,5 @@ COPY package.json package-lock.json /app/
 RUN npm -q install --only=prod && npm -q cache clean --force
 COPY server.js /app/
 COPY src/ /app/src/
-
-# RUN npm link winston
 
 CMD [ "npm", "start" ]

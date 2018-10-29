@@ -1,24 +1,53 @@
-const winston = require('winston');
+const {createLogger, format, transports} = require('winston');
+const {MESSAGE} = require('triple-beam');
+const {inspect} = require('util');
 
-function loggerFactory(additionalMeta) {
-    const rewriters = additionalMeta
-        ? [(level, msg, meta) => ({...meta, ...additionalMeta})]
-        : undefined;
+const {combine, timestamp, splat, colorize} = format;
 
-    return new winston.Logger({
+const idGenerator = {
+    id: new Date().getTime(),
+    next() {
+        this.id = (this.id % (Number.MAX_SAFE_INTEGER - 1)) + 1;
+        return this.id.toString(36);
+    }
+};
+
+const outputFormat = format((info, loggerId) => {
+    const meta = inspect((info.meta || {}), {
+        colors: true,
+        compact: false,
+        breakLength: 100
+    });
+
+    let message = `${info.timestamp} - ${loggerId} - ${info.level}: ${info.message}`;
+
+    if (meta !== '{}') {
+        message = `${message}\n${meta}`;
+    }
+
+    return {
+        ...info,
+        [MESSAGE]: message
+    };
+});
+
+function loggerFactory() {
+    const loggerId = idGenerator.next();
+
+    return createLogger({
+        level: 'debug',
+        format: combine(
+            timestamp(),
+            colorize({level: true}),
+            splat(),
+            outputFormat(loggerId)
+        ),
         transports: [
-            new winston.transports.Console({
-                handleExceptions: true,
-                humanReadableUnhandledException: true,
-                timestamp: true,
-                colorize: true,
-                prettyPrint: true,
-                json: false
+            new transports.Console({
+                handleExceptions: true
             })
         ],
-        exitOnError: false,
-        level: 'debug',
-        rewriters
+        exitOnError: false
     });
 }
 
