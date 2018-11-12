@@ -508,7 +508,7 @@ describe('secrets', () => {
     test('renew, revoke - token', async () => {
         const renewResp = await apiV1user.post('/tokens/renew');
         expect(renewResp.status).toBe(200);
-        expect(renewResp.data.ttl).toBe(3600);
+        expect(renewResp.data.ttl).toBe(7200);
 
         const revokeResp = await apiV1user.post('/tokens/revoke');
         expect(revokeResp.status).toBe(204);

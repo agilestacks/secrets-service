@@ -49,7 +49,7 @@ module.exports = {
             if (goodStatus(tokenPolicyResp, ...policiesResp)) {
                 const rolePath = `/auth/approle/role/${id}`;
                 const role = {
-                    period: 3600,
+                    period: 7200,
                     bind_secret_id: true,
                     policies
                 };
