@@ -436,7 +436,7 @@ describe('secrets', () => {
                 name: 'customer.role',
                 kind: 'cloudAccount',
                 cloud: 'aws',
-                roleArn: 'arn:aws:iam::973998981304:role/lambda_basic_execution',
+                roleArn: 'arn:aws:iam::973998981304:role/secrets-service-test-role',
                 duration: 1234
             };
 
