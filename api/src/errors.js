@@ -38,11 +38,11 @@ class BadRequestError extends ApiError {
     }
 
     toResponse() {
-        return {
+        return [{
             type: errorTypes[this.status] || errorTypes[400],
             detail: this.message,
             meta: {...this.meta, ...{stack: this.stack}}
-        };
+        }];
     }
 }
 
