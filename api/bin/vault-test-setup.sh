@@ -17,6 +17,8 @@ $vault write sys/policy/authentication-service-low-priv  policy=@policies/policy
 $vault write sys/policy/automation-hub-high-priv         policy=@policies/policy-hub-high.hcl
 $vault write sys/policy/automation-hub-low-priv          policy=@policies/policy-hub-low.hcl
 
+$vault secrets disable secret
+$vault secrets enable -version=1 -path=secret kv
 $vault auth enable approle
 for role in authentication-service-high-priv \
             authentication-service-low-priv \
