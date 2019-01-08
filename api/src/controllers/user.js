@@ -48,17 +48,22 @@ module.exports = {
 
             if (goodStatus(tokenPolicyResp, ...policiesResp)) {
                 const rolePath = `/auth/approle/role/${id}`;
-                const role = {
-                    period: 7200,
-                    bind_secret_id: true,
-                    policies
-                };
-                const roleResp = await api.post(rolePath, role, wvt);
-                if (goodStatus(roleResp)) {
+                const rolePoliciesResp = await api.post(`${rolePath}/policies`, {policies}, wvt);
+                const requestRole = !goodStatus(rolePoliciesResp); // 404
+                let roleResp;
+                if (requestRole) {
+                    const role = {
+                        period: 7200,
+                        bind_secret_id: true,
+                        policies
+                    };
+                    roleResp = await api.post(rolePath, role, wvt);
+                }
+                if (!requestRole || goodStatus(roleResp)) {
                     const roleIdResp = await api.get(`${rolePath}/role-id`, wvt);
                     if (roleIdResp.status === 200) {
                         const roleId = roleIdResp.data.data.role_id;
-                        ctx.status = 201;
+                        ctx.status = requestRole ? 201 : 200;
                         ctx.body = {roleId};
                     } else {
                         logger.warn(

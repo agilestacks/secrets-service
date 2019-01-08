@@ -78,13 +78,17 @@ describe('users', () => {
     beforeAll(setupApi);
 
     test('create & delete', async () => {
-        expect.assertions(3);
+        expect.assertions(5);
 
         const path = '/users/okta-1';
 
         const putResp = await apiV1serviceHigh.put(path);
         expect(putResp.status).toBe(201);
         expect(putResp.data.roleId).toBeDefined();
+
+        const putResp2 = await apiV1serviceHigh.put(path);
+        expect(putResp2.status).toBe(200);
+        expect(putResp2.data.roleId).toBeDefined();
 
         const deleteResp = await apiV1serviceHigh.delete(path);
         expect(deleteResp.status).toBe(204);
