@@ -433,7 +433,9 @@ User is currently an Okta user and is addressed by Okta user Id with prefix `okt
 
 ### Create User [PUT]
 
-`roleId` must be saved by calling service for use with `/login`.
+`roleId` must be saved by calling service for use with `/login`. This method is idempotent and it will reset the
+policies associated with the role in case role already exist. (Policies controls access to Environment, Cloud
+Account, etc. secrets)
 
 + Request
 
