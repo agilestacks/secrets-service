@@ -26,7 +26,7 @@ for role in authentication-service-high-priv \
             automation-hub-low-priv; do
 
     $vault write auth/approle/role/$role period=60m \
-        bind_secret_id=false bound_cidr_list=127.0.0.0/8,10.0.0.0/8 \
+        bind_secret_id=false secret_id_bound_cidrs=127.0.0.0/8,10.0.0.0/8 \
         policies=$role
 done
 
