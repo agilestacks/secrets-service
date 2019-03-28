@@ -4,3 +4,4 @@ report.html
 vault-service-roles.json
 telepresence.log
 .envrc
+*-junit.xml

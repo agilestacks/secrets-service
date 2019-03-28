@@ -6,31 +6,32 @@
     "dredd": "dredd --config test/dredd.yaml",
     "jest": "jest",
     "lint": "eslint server.js src/ test/",
+    "lint:junit": "eslint -o eslint-junit.xml -f junit server.js src/",
     "test": "npm run jest",
     "test-spec": "npm run dredd",
     "test-all": "npm run dredd && npm run jest",
     "debug": "node --inspect server.js"
   },
   "dependencies": {
-    "aws-config": "^1.2.0",
-    "aws-sdk": "^2.350.0",
+    "aws-config": "^1.3.1",
+    "aws-sdk": "^2.430.0",
     "axios": "^0.18.0",
-    "koa": "^2.6.1",
+    "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
     "koa-router": "^7.4.0",
     "lodash": "^4.17.11",
     "triple-beam": "^1.3.0",
     "uuid": "^3.3.2",
-    "winston": "^3.1.0"
+    "winston": "^3.2.1"
   },
   "devDependencies": {
-    "dredd": "^5.2.0",
-    "eslint": "^5.8.0",
+    "dredd": "^8.0.6",
+    "eslint": "^5.15.3",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.14.0",
-    "husky": "^1.1.3",
-    "jest": "^23.6.0",
-    "mocha": "^5.2.0"
+    "eslint-plugin-import": "^2.16.0",
+    "husky": "^1.3.1",
+    "jest": "^24.5.0",
+    "mocha": "^6.0.2"
   },
   "engines": {
     "node": ">=10.13",
