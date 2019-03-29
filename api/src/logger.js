@@ -1,6 +1,7 @@
 const {createLogger, format, transports} = require('winston');
-const {MESSAGE} = require('triple-beam');
+const {LEVEL, MESSAGE, SPLAT} = require('triple-beam');
 const {inspect} = require('util');
+const {omit} = require('lodash');
 
 const {combine, timestamp, splat, colorize} = format;
 
@@ -12,8 +13,10 @@ const idGenerator = {
     }
 };
 
+const omitFields = [MESSAGE, SPLAT, LEVEL, 'level', 'message', 'timestamp'];
+
 const outputFormat = format((info, loggerId) => {
-    const meta = inspect((info.meta || {}), {
+    const meta = inspect(omit(info, omitFields), {
         colors: true,
         compact: false,
         breakLength: 100
