@@ -17,13 +17,13 @@ const allowedEntities = ['environments', 'cloud-accounts', 'licenses', 'template
 const allowedKinds = [
     'password', 'cloudAccount', 'cloudAccessKeys', 'privateKey',
     'certificate', 'sshKey', 'usernamePassword', 'text', 'license',
-    'loginToken', 'gitAccessToken'
+    'token', 'bearerToken', 'accessToken', 'refreshToken', 'loginToken'
 ];
 const allowedFields = [
     'name', 'kind',
     'userId', 'groupId', 'groupName',
-    'username', 'password', 'loginToken', 'licenseKey',
-    'privateKey', 'certificate', 'sshKey', 'text',
+    'username', 'password', 'token', 'bearerToken', 'accessToken', 'refreshToken', 'loginToken',
+    'privateKey', 'certificate', 'sshKey', 'text', 'licenseKey',
     'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId', 'duration'
 ];
 
