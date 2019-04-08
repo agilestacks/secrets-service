@@ -1,4 +1,4 @@
-/* eslint-disable prefer-destructuring */
+/* eslint-disable prefer-destructuring, no-underscore-dangle */
 const crypto = require('crypto');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
