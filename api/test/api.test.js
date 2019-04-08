@@ -218,6 +218,7 @@ describe('secrets', () => {
     let apiV1user;
 
     const paths = ['/secrets/environments/env-1', '/secrets/cloud-accounts/clacc-1'];
+    const clPaths = ['/secrets/cloud-accounts/clacc-1', '/secrets/cloud-accounts/clacc-2'];
     const secretTemplate = add => ({
         name: 'component.postgresql.password',
         kind: 'password',
@@ -239,7 +240,7 @@ describe('secrets', () => {
         const putResp = await apiV1serviceHigh.put(user);
         const roleId = putResp.data.roleId;
         await apiV1serviceHigh.put(`${user}/environments`, {environments: ['env-1']});
-        await apiV1serviceHigh.put(`${user}/cloud-accounts`, {cloudAccounts: ['clacc-1']});
+        await apiV1serviceHigh.put(`${user}/cloud-accounts`, {cloudAccounts: ['clacc-1', 'clacc-2']});
         const userLoginResp = await apiV1serviceLow.post(`${user}/login`, {roleId});
         const tokenUser = userLoginResp.data.token;
 
@@ -389,11 +390,10 @@ describe('secrets', () => {
         }));
     });
 
-    // TODO `cloudAccount` is only for /cloud-accounts
     test('cloud account - mask', () => {
         expect.assertions(30);
 
-        return Promise.all(paths.map(async (path) => {
+        return Promise.all(clPaths.map(async (path) => {
             const secret = {
                 name: 'customer.account',
                 kind: 'cloudAccount',
@@ -432,12 +432,12 @@ describe('secrets', () => {
         }));
     });
 
-    test('session token - role', () => {
-        expect.assertions(24);
+    test('cloud session - AWS role', () => {
+        expect.assertions(30);
 
-        return Promise.all(paths.map(async (path) => {
+        return Promise.all(clPaths.map(async (path) => {
             const secret = {
-                name: 'customer.role',
+                name: 'aws.role',
                 kind: 'cloudAccount',
                 cloud: 'aws',
                 roleArn: 'arn:aws:iam::973998981304:role/secrets-service-test-role',
@@ -460,6 +460,9 @@ describe('secrets', () => {
             expect(keysResp.data.accessKey).toBeDefined();
             expect(keysResp.data.secretKey).toBeDefined();
             expect(keysResp.data.sessionToken).toBeDefined();
+            expect(keysResp.data._env.AWS_ACCESS_KEY_ID).toBeDefined();
+            expect(keysResp.data._env.AWS_SECRET_ACCESS_KEY).toBeDefined();
+            expect(keysResp.data._env.AWS_SESSION_TOKEN).toBeDefined();
             expect(keysResp.data.ttl).toBe(secret.duration);
 
             const deleteResp = await apiV1user.delete(`${path}/${id}`);
@@ -470,12 +473,12 @@ describe('secrets', () => {
         }));
     });
 
-    test.skip('session token - keys', () => {
+    test.skip('cloud session - AWS keys', () => {
         expect.assertions(24);
 
-        return Promise.all(paths.map(async (path) => {
+        return Promise.all(clPaths.map(async (path) => {
             const secret = {
-                name: 'customer.keys',
+                name: 'aws.keys',
                 kind: 'cloudAccount',
                 cloud: 'aws',
                 accessKey: '',
@@ -499,6 +502,137 @@ describe('secrets', () => {
             expect(keysResp.data.secretKey).toBeDefined();
             expect(keysResp.data.sessionToken).toBeDefined();
             expect(keysResp.data.ttl).toBeDefined();
+
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
+    test('cloud session - Azure service account with secret', () => {
+        expect.assertions(36);
+
+        return Promise.all(clPaths.map(async (path) => {
+            const secret = {
+                name: 'azure.secret',
+                kind: 'cloudAccount',
+                cloud: 'azure',
+                clientId: 'c5f20792-7323-4f58-abd2-cf8a96aa41d7',
+                clientSecret: 'd3fe153c-cd49-43ed-9e87-1d75de077721',
+                subscriptionId: '27b7d5df-04c7-42d5-8023-b3a475b5b3b2',
+                tenantId: 'fa02ed83-79cf-497f-b860-fa3e4fabf356'
+            };
+
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
+
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
+                {purpose: 'secrets service test'});
+            expect(keysResp.status).toBe(200);
+            expect(keysResp.data.cloud).toBeDefined();
+            expect(keysResp.data.clientId).toBeDefined();
+            expect(keysResp.data.clientSecret).toBeDefined();
+            expect(keysResp.data.subscriptionId).toBeDefined();
+            expect(keysResp.data.tenantId).toBeDefined();
+            expect(keysResp.data._env.AZURE_CLIENT_ID).toBeDefined();
+            expect(keysResp.data._env.AZURE_CLIENT_SECRET).toBeDefined();
+            expect(keysResp.data._env.AZURE_SUBSCRIPTION_ID).toBeDefined();
+            expect(keysResp.data._env.AZURE_TENANT_ID).toBeDefined();
+            expect(keysResp.data._env.AZURE_CERTIFICATE_PATH).toBeUndefined();
+            expect(keysResp.data._envAsFile).toEqual([]);
+
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
+    test('cloud session - Azure service account with certificate', () => {
+        expect.assertions(36);
+
+        return Promise.all(clPaths.map(async (path) => {
+            const secret = {
+                name: 'azure.secret',
+                kind: 'cloudAccount',
+                cloud: 'azure',
+                clientId: 'c5f20792-7323-4f58-abd2-cf8a96aa41d7',
+                clientCertificate: '-----BEGIN PRIVATE KEY-----\nMII',
+                subscriptionId: '27b7d5df-04c7-42d5-8023-b3a475b5b3b2',
+                tenantId: 'fa02ed83-79cf-497f-b860-fa3e4fabf356'
+            };
+
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
+
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
+                {purpose: 'secrets service test'});
+            expect(keysResp.status).toBe(200);
+            expect(keysResp.data.cloud).toBeDefined();
+            expect(keysResp.data.clientId).toBeDefined();
+            expect(keysResp.data.clientCertificate).toBeDefined();
+            expect(keysResp.data.subscriptionId).toBeDefined();
+            expect(keysResp.data.tenantId).toBeDefined();
+            expect(keysResp.data._env.AZURE_CLIENT_ID).toBeDefined();
+            expect(keysResp.data._env.AZURE_CERTIFICATE_PATH).toBeDefined();
+            expect(keysResp.data._env.AZURE_SUBSCRIPTION_ID).toBeDefined();
+            expect(keysResp.data._env.AZURE_TENANT_ID).toBeDefined();
+            expect(keysResp.data._env.AZURE_CLIENT_SECRET).toBeUndefined();
+            expect(keysResp.data._envAsFile).toEqual(['AZURE_CERTIFICATE_PATH']);
+
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
+    test('cloud session - GCP service account', () => {
+        expect.assertions(24);
+
+        return Promise.all(clPaths.map(async (path) => {
+            const secret = {
+                name: 'gcp.service_account',
+                kind: 'cloudAccount',
+                cloud: 'gcp',
+                type: 'service_account',
+                private_key: '-----BEGIN PRIVATE KEY-----\nMII',
+                client_id: '118125642796990073719'
+            };
+
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
+
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            const keysResp = await apiV1user.post(`${path}/${id}/session-keys`,
+                {purpose: 'secrets service test'});
+            expect(keysResp.status).toBe(200);
+            expect(keysResp.data.cloud).toBeDefined();
+            expect(keysResp.data.client_id).toBeDefined();
+            expect(keysResp.data.private_key).toBeDefined();
+            expect(keysResp.data._env.GOOGLE_APPLICATION_CREDENTIALS).toBeDefined();
+            expect(keysResp.data._envAsFile).toEqual(['GOOGLE_APPLICATION_CREDENTIALS']);
 
             const deleteResp = await apiV1user.delete(`${path}/${id}`);
             expect(deleteResp.status).toBe(204);

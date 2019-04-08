@@ -6,7 +6,7 @@ HOST: http://secrets.agilestacks.com/api/v1
 Secrets Service has protected HTTP API to provide access to all it's functions, such as:
 
 - saving and retrieving secrets;
-- obtaining expiring tokens to access secrets;
+- obtaining expiring tokens to access cloud accounts;
 - manage secrets permissions.
 
 Please read [design](https://github.com/agilestacks/secrets-service/blob/master/README.md) first.
@@ -15,7 +15,11 @@ There are several types of supported entities: `cloud-accounts`, `environments`,
 `licenses`, and `service-accounts`.
 
 Supported types of `kind` field in secret object are: `password`, `cloudAccount`, `cloudAccessKeys`,
-`caPrivateKey`, `certificate`, `sshKey`, `usernamePassword`, `loginToken`, `text`, and `license`.
+`privateKey`, `certificate`, `sshKey`, `usernamePassword`, `text`, `license`,
+`token`, `bearerToken`, `accessToken`, `refreshToken`, and `loginToken`.
+
+For `kind = 'cloudAccount'`, Secrets Service will check secret object `cloud` field is one of:
+`aws`, `azure`, `gcp`.
 
 ## Secret [/secrets/{entityKind}/{entityId}/{secretId}]
 
@@ -36,7 +40,7 @@ Password:
 {
     "id": "02a669c0-543b-432f-a11d-fb21f29c7200",
     "name": "component.postgresql.password",
-    "kind": "password",
+    "kind": "usernamePassword",
     "username": "automation-hub",
     "password": "jai0eite3X"
 }
@@ -96,10 +100,15 @@ Cloud account entity:
 
 ### Retrieve Cloud Account Session [POST /secrets/cloud-account/{cloudAccountId}/{secretId}/session-keys]
 
-Post to cloud account session endpoint returns AWS keys valid for 1 hour.
+Post to cloud account session endpoint returns cloud-specific credentials to access cloud account.
+
+For AWS a set of temporary security credentials are issued. The keys are valid for `duration` of the request
+or the secret, or the STS default of 1 hour.
 Optionaly send `purpose` to be included as part of _role session name_ sent to STS.
 
-If cloud account credentials are `accessKey` and `secretKey` pair, then is must be keys either of account
+For Azure and GCP as set of static credentials are returned.
+
+If AWS cloud account credentials are `accessKey` and `secretKey` pair, then is must be keys either of account
 root user or IAM user with MFA **disabled**. The session keys obtained cannot call IAM API due to
 restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.com/STS/latest/APIReference/API_GetSessionToken.html):
 
@@ -107,6 +116,11 @@ restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.co
 >
 > - You cannot call any IAM APIs unless MFA authentication information is included in the request.
 > - You cannot call any STS API except AssumeRole or GetCallerIdentity.
+
+Response object `_env: {}` field includes cloud-specific set of OS environment variable that should be exported
+to get cloud CLIs and SDKs working with the cloud account. Additionally, `_envAsFiles: []` array indicates
+which `_env` keys cannot be presented inline, but must be saved into file for native auth mechanism to pick-up
+the settings, for example `"_envAsFiles": ["GOOGLE_APPLICATION_CREDENTIALS"]`,  `"_envAsFiles": ["AZURE_CERTIFICATE_PATH"]`.
 
 + Parameters
     + cloudAccountId: `123` (string) - ID of the Cloud Account
@@ -121,7 +135,8 @@ restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.co
     + Body
 
             {
-                "purpose": "stack-k8s-aws deployment"
+                "purpose": "stack-k8s-aws deployment",
+                "duration": 4800
             }
 
 
@@ -134,7 +149,12 @@ restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.co
                 "accessKey": "AKIA****************",
                 "secretKey": "IqCFm0**********************************",
                 "sessionToken": "...",
-                "ttl": 7200
+                "ttl": 7200,
+                "_env": {
+                    "AWS_ACCESS_KEY_ID": "...",
+                    "AWS_SECRET_ACCESS_KEY": "...",
+                    "AWS_SESSION_TOKEN": "..."
+                }
             }
 
 + Response 404
@@ -202,7 +222,7 @@ restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.co
 
             {
                 "name": "component.postgresql.password",
-                "kind": "password",
+                "kind": "usernamePassword",
                 "username": "automation-hub",
                 "password": "jai0eite3X"
             }
@@ -248,7 +268,9 @@ restriction imposed by AWS, from [STS GetSessionToken](http://docs.aws.amazon.co
 ### Create Secret by example [POST /secrets/{entityKind}/{entityId}/copy/{fromEntityKind}/{fromEntityId}/{fromId}]
 
 Create a new secret by copying existing secret, optionally changing or adding secret's fields.
-If supplied, `kind` must match source secret `kind`.
+
+If supplied, `kind` must match source secret `kind`. If `kind = 'cloudAccount'` is presented in the body, then
+`cloud` must be specified and must match source secret `cloud`.
 
 + Parameters
     + entityKind: `instances` - Entity type identifier
@@ -433,7 +455,7 @@ User is currently an Okta user and is addressed by Okta user Id with prefix `okt
 
 ### Create User [PUT]
 
-`roleId` must be saved by calling service for use with `/login`. This method is idempotent and it will reset the
+Returned `roleId` must be saved by calling service for use with `/login`. This method is idempotent and it will reset the
 policies associated with the role in case role already exist. (Policies controls access to Environment, Cloud
 Account, etc. secrets)
 
@@ -477,12 +499,14 @@ Account, etc. secrets)
 + Response 504
 
 
-### Update User Environments access [PUT /users/{userId}/environments]
+### Update User access to secrets [PUT /users/{userId}/{entityKind}]
 
-Put a list of `environmentId`-s the user has access to.
+Put a list of `entityKind` `Id`-s the user has access to.
+Only one corresponding key must be specified in request body.
 
 + Parameters
     + userId: `okta-00ub0oNGTSWTBKOLGLNR` (string) - ID of the User
+    + entityKind: `environments` (string) - Entity type identifier
 
 + Request (application/json; charset=utf-8)
 
@@ -493,7 +517,9 @@ Put a list of `environmentId`-s the user has access to.
     + Body
 
             {
-                "environments": ["env id 1", "env id 2"]
+                "environments": ["env id 1", "env id 2"],
+                "cloudAccounts": ["cloud account id 1", "cloud account id 2"],
+                "etc.": []
             }
 
 + Response 204
@@ -514,55 +540,6 @@ Put a list of `environmentId`-s the user has access to.
                                 "detail": "`environments` field is not set",
                                 "meta": {
                                     "stack":"Error: `environments` field is not set...js:76:19)"
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-
-+ Response 502
-
-+ Response 504
-
-
-### Update User Cloud Account access [PUT /users/{userId}/cloud-accounts]
-
-Put a list of `cloudAccountId`-s the user has access to.
-
-+ Parameters
-    + userId: `okta-00ub0oNGTSWTBKOLGLNR` (string) - ID of the User
-
-+ Request (application/json; charset=utf-8)
-
-    + Headers
-
-            X-Secrets-Token: high-privilege-automation-hub-token | high-privilege-auth-service-token
-
-    + Body
-
-            {
-                "cloudAccounts": ["cloud account id 1", "cloud account id 2"]
-            }
-
-+ Response 204
-
-+ Response 404
-
-+ Response 403
-
-+ Response 400 (application/json; charset=utf-8)
-
-            "errors": [
-                    {
-                        "type": "badRequest",
-                        "detail": "`cloudAccounts` field is not set",
-                        "meta": {
-                            "errors": {
-                                "type": "badRequest",
-                                "detail": "`cloudAccounts` field is not set",
-                                "meta": {
-                                    "stack":"Error: `cloudAccounts` field is not set...js:76:19)"
                                 }
                             }
                         }

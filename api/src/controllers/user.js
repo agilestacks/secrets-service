@@ -2,7 +2,7 @@ const {camelCase} = require('lodash');
 const {api, withToken, goodStatus, proxyErrorStatus, printBadResponses} = require('../vault');
 const {logger} = require('../logger');
 const {NotFoundError, BadRequestError} = require('../errors');
-const {allowedEntities, checkEntityKind} = require('./secret');
+const {allowedEntities, checkEntityKind} = require('../validate');
 
 const stubUsers = new Map(); // Jest tests
 

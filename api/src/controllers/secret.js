@@ -1,97 +1,13 @@
-const crypto = require('crypto');
-const aws = require('aws-sdk');
-const awsConfig = require('aws-config');
 const uuidv4 = require('uuid/v4');
 const {pick: lopick, isEmpty, partition} = require('lodash');
+const {allowedEntities, allowedFields, checkEntityKind, checkSecretKind, checkCloudKind} = require('../validate');
+const {maskSecrets} = require('../mask');
+const {awsSession, azureSession, gcpSession} = require('../cloud');
 const {api, withToken, goodStatus, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
 const {NotFoundError, BadRequestError, ServerError} = require('../errors');
 
-aws.config = awsConfig();
-const sts = new aws.STS();
-const stsTtl = 3600;
-
 const stubSecrets = new Map();
-
-const allowedEntities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances', 'service-accounts'];
-const allowedKinds = [
-    'password', 'cloudAccount', 'cloudAccessKeys', 'privateKey',
-    'certificate', 'sshKey', 'usernamePassword', 'text', 'license',
-    'token', 'bearerToken', 'accessToken', 'refreshToken', 'loginToken'
-];
-const allowedFields = [
-    'name', 'kind',
-    'userId', 'groupId', 'groupName',
-    'username', 'password', 'token', 'bearerToken', 'accessToken', 'refreshToken', 'loginToken',
-    'privateKey', 'certificate', 'sshKey', 'text', 'licenseKey',
-    'cloud', 'accessKey', 'secretKey', 'roleArn', 'externalId', 'duration'
-];
-
-const randomSuf = () => crypto.randomBytes(3).toString('hex');
-
-function assumeRole(roleName, externalId, duration, purpose) {
-    const prefix = purpose.substring(0, 57).replace(/[^\w+=,.@-]/g, '-');
-    const params = {
-        RoleArn: roleName,
-        ExternalId: externalId,
-        RoleSessionName: `${prefix}-${randomSuf()}`, // max length is 64
-        DurationSeconds: duration
-    };
-    return sts.assumeRole(params).promise();
-}
-
-function getSessionToken(accessKeyId, secretAccessKey, duration) {
-    const accountSts = new aws.STS(awsConfig({accessKeyId, secretAccessKey}));
-    const params = {
-        DurationSeconds: duration
-    };
-    return accountSts.getSessionToken(params).promise();
-}
-
-function maskRole(roleArn) {
-    const c = roleArn.split(':', 6);
-    if (c.length >= 6) {
-        const roleName = c[5];
-        c[5] = roleName.substring(0, 9).padEnd(roleName.length, '*');
-        return c.join(':');
-    }
-    return roleArn.substring(0, 26).padEnd(roleArn.length, '*');
-}
-
-function maskExternalId(externalId) {
-    const truncAt = Math.min(externalId.length, 10) - 2;
-    return externalId.substr(0, truncAt).padEnd(externalId.length, '*');
-}
-
-function maskKey(key) {
-    const truncAt = key.startsWith('AK') ? 8 : 4;
-    return key.substring(0, truncAt).padEnd(key.length, '*');
-}
-
-function maskSecret(secret) {
-    const masked = {...secret};
-    if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
-        if (masked.roleArn) masked.roleArn = maskRole(secret.roleArn);
-        if (masked.externalId) masked.externalId = maskExternalId(masked.externalId);
-        if (masked.accessKey) masked.accessKey = maskKey(masked.accessKey);
-        if (masked.secretKey) masked.secretKey = maskKey(masked.secretKey);
-    }
-    return masked;
-}
-
-function checkEntityKind(entity) {
-    if (!allowedEntities.some(kind => kind === entity)) {
-        const error = `Entity must be one of '${allowedEntities.join(', ')}'; got '${entity}'`;
-        throw new BadRequestError(error);
-    }
-}
-
-function checkSecretKind(secret) {
-    if (!allowedKinds.some(kind => kind === secret)) {
-        const error = `Secret 'kind' must be one of '${allowedKinds.join(', ')}'; got '${secret}'`;
-        throw new BadRequestError(error);
-    }
-}
 
 module.exports = {
     allowedEntities,
@@ -106,6 +22,7 @@ module.exports = {
         checkEntityKind(entityKind);
         const secret = lopick(body, allowedFields);
         checkSecretKind(secret.kind);
+        checkCloudKind(secret.kind, secret.cloud);
         const id = uuidv4();
         if (entityId.startsWith('stub-')) {
             stubSecrets.set(id, secret);
@@ -134,6 +51,7 @@ module.exports = {
         checkEntityKind(entityKind);
         const update = lopick(body, allowedFields);
         checkSecretKind(update.kind);
+        checkCloudKind(update.kind, update.cloud);
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
@@ -168,6 +86,11 @@ module.exports = {
                 if (secret.kind !== update.kind) {
                     const msg = 'Secret `kind` doesn\'t match';
                     logger.error(msg, {oldKind: secret.kind, newKind: update.kind});
+                    throw new BadRequestError(msg, 409);
+                }
+                if (secret.cloud && secret.cloud !== update.cloud) {
+                    const msg = 'Secret `cloud` doesn\'t match';
+                    logger.error(msg, {oldCloud: secret.cloud, newCloud: update.cloud});
                     throw new BadRequestError(msg, 409);
                 }
             }
@@ -290,7 +213,7 @@ module.exports = {
                 }
             } else {
                 ctx.status = 200;
-                ctx.body = {...maskSecret(resp.data.data), ...{id}};
+                ctx.body = {...maskSecrets(resp.data.data), ...{id}};
             }
         }
     },
@@ -306,6 +229,7 @@ module.exports = {
         const patch = lopick(body, allowedFields);
         if (patch.kind) {
             checkSecretKind(patch.kind);
+            checkCloudKind(patch.kind, patch.cloud); // if `kind=cloud` is presented, then `cloud` must be set
         }
 
         let fromSecret;
@@ -335,6 +259,11 @@ module.exports = {
         if (patch.kind && patch.kind !== fromSecret.kind) {
             const msg = 'Secret `kind` doesn\'t match';
             logger.error(msg, {oldKind: fromSecret.kind, newKind: patch.kind});
+            throw new BadRequestError(msg, 409);
+        }
+        if (patch.cloud && patch.cloud !== fromSecret.cloud) {
+            const msg = 'Secret `cloud` doesn\'t match';
+            logger.error(msg, {oldCloud: fromSecret.cloud, newCloud: patch.cloud});
             throw new BadRequestError(msg, 409);
         }
 
@@ -375,18 +304,15 @@ module.exports = {
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
-                if (secret.kind === 'cloudAccount') {
-                    ctx.status = 200;
-                    ctx.body = {
-                        cloud: 'aws',
-                        accessKey: 'AKIA****************',
-                        secretKey: 'IqCFm0**********************************',
-                        sessionToken: '...',
-                        ttl: secret.duration || stsTtl
-                    };
-                } else {
-                    throw new BadRequestError('The requested secret is not `cloudAccount` kind', 405);
-                }
+                checkCloudKind(secret.kind, secret.cloud, true);
+                ctx.status = 200;
+                ctx.body = {
+                    cloud: 'aws',
+                    accessKey: 'AKIA****************',
+                    secretKey: 'IqCFm0**********************************',
+                    sessionToken: '...',
+                    ttl: secret.duration || 3600
+                };
             } else {
                 throw new NotFoundError();
             }
@@ -403,61 +329,22 @@ module.exports = {
                 }
             } else {
                 const secret = resp.data.data;
-                if (secret.kind === 'cloudAccount' && secret.cloud === 'aws') {
-                    let {duration} = body || {};
-                    const secretDuration = parseInt(secret.duration, 10);
-                    if (!duration) {
-                        duration = secretDuration || stsTtl;
-                    }
-                    if (secretDuration && duration > secretDuration) {
-                        duration = secretDuration;
-                    }
-                    duration = parseInt(duration, 10);
-
-                    let stsReply;
-                    if (secret.roleArn) {
-                        const purpose = (body && body.purpose)
-                            ? body.purpose
-                            : 'automation';
-                        try {
-                            stsReply = await assumeRole(secret.roleArn, secret.externalId, duration, purpose);
-                        } catch (err) {
-                            throw new ServerError(
-                                `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`,
-                                {status: 502}
-                            );
-                        }
-                    } else if (secret.accessKey && secret.secretKey) {
-                        try {
-                            stsReply = await getSessionToken(secret.accessKey, secret.secretKey, duration);
-                        } catch (err) {
-                            throw new ServerError(
-                                `AWS STS error getting session token for '${maskKey(secret.accessKey)}': ${err}`,
-                                {status: 502}
-                            );
-                        }
-                    } else {
-                        throw new BadRequestError(
-                            'The requested secret has no `roleArn`, nor `accessKey` with `secretKey` defined',
-                            405
-                        );
-                    }
-
-                    const creds = stsReply.Credentials;
-                    ctx.status = 200;
-                    ctx.body = {
-                        cloud: 'aws',
-                        accessKey: creds.AccessKeyId,
-                        secretKey: creds.SecretAccessKey,
-                        sessionToken: creds.SessionToken,
-                        ttl: duration
-                    };
-                } else {
-                    throw new BadRequestError(
-                        'The requested secret is not `cloudAccount:aws` kind',
-                        405
-                    );
+                checkCloudKind(secret.kind, secret.cloud, true);
+                let session;
+                switch (secret.cloud) {
+                case 'aws':
+                    session = await awsSession(secret, body);
+                    break;
+                case 'azure':
+                    session = azureSession(secret);
+                    break;
+                case 'gcp':
+                    session = gcpSession(secret);
+                    break;
+                default:
                 }
+                ctx.status = 200;
+                ctx.body = {cloud: secret.cloud, ...session};
             }
         }
     }
