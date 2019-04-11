@@ -30,6 +30,7 @@ const allowedFields = [
     'name', 'kind',
     'userId', 'userName', 'groupId', 'groupName',
     'username', 'password', 'token', 'bearerToken', 'accessToken', 'refreshToken', 'loginToken',
+    'privateKey', 'certificate', 'sshKey', 'text', 'licenseKey',
     'cloud',
     ...flatten(lovalues(cloudAllowedFields))
 ];
