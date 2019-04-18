@@ -12,8 +12,9 @@
     "func-style": ["error", "declaration", {"allowArrowFunctions": true}],
     "indent": ["error", 4],
     "max-len": ["error", 120],
-    "no-param-reassign": ["error", {"props": true, "ignorePropertyModificationsFor": ["ctx"]}],
+    "no-param-reassign": ["error", {"props": true, "ignorePropertyModificationsFor": ["ctx", "acc"]}],
     "object-curly-spacing": ["error", "never"],
+    "operator-linebreak": ["error", "before", { "overrides": { "=": "none", "?": "ignore", ":": "ignore" } }],
     "space-before-function-paren": ["error", {
       "named": "never",
       "asyncArrow": "always"
