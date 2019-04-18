@@ -1,8 +1,11 @@
 /* eslint-disable prefer-destructuring, no-underscore-dangle */
 const crypto = require('crypto');
+const {flatMap, fromPairs} = require('lodash');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
 const uuidv4 = require('uuid/v4');
+
+const {maskSecrets} = require('../src/mask');
 
 // eslint-disable-next-line import/no-unresolved
 const vaultServiceRoles = require('../vault-service-roles.json');
@@ -225,6 +228,50 @@ describe('secrets', () => {
         username: 'automation-hub',
         password: `jai0eite3X${add}`
     });
+    const kinds = {
+        cloudAccount: {
+            aws: ['accessKey', 'secretKey', 'roleArn', 'externalId', 'duration'],
+            azure: [
+                'clientId',
+                'clientSecret', 'clientCertificate',
+                'subscriptionId', 'tenantId',
+                'activeDirectoryEndpointUrl', 'resourceManagerEndpointUrl', 'activeDirectoryGraphResourceId',
+                'sqlManagementEndpointUrl', 'galleryEndpointUrl', 'managementEndpointUrl'
+            ],
+            gcp: [
+                'type',
+                // authorized_user
+                'client_id', 'client_secret', 'refresh_token',
+                // service_account
+                'project_id',
+                'private_key_id', 'private_key', 'client_email', 'client_id',
+                'auth_uri', 'token_uri', 'auth_provider_x509_cert_url', 'client_x509_cert_url'
+            ]
+        },
+        cloudAccessKeys: ['accessKey', 'secretKey'],
+        privateKey: ['privateKey'],
+        certificate: ['certificate'],
+        sshKey: ['sshKey'],
+        password: ['password'],
+        usernamePassword: ['username', 'password'],
+        text: ['text'],
+        license: ['licenseKey'],
+        token: ['token'],
+        bearerToken: ['bearerToken'],
+        accessToken: ['accessToken'],
+        refreshToken: ['refreshToken'],
+        loginToken: ['loginToken', 'userId', 'userName', 'groupId', 'groupName']
+    };
+    const randomSecrets = (kind, setup) => {
+        const name = () => ({name: `${kind}-${uuidv4()}`});
+        const init = kind === 'cloudAccount' ?
+            Object.entries(setup).map(([cloud, fields]) => ({fields, common: {kind, ...name(), cloud}})) :
+            [{fields: setup, common: {kind, ...name()}}];
+        return init.map(({fields, common}) => ({
+            ...common,
+            ...fromPairs(fields.map(key => [key, `${key}-${uuidv4()}`]))
+        }));
+    };
 
     const setupApi = async () => {
         const loginResp = await apiV1open.post(authServiceLoginPath,
@@ -312,6 +359,34 @@ describe('secrets', () => {
             const getNoneResp = await apiV1user.get(`${path}/${id}`);
             expect(getNoneResp.status).toBe(404);
         }));
+    });
+
+    test('create, get, delete all kinds', () => {
+        expect.assertions(192);
+
+        return Promise.all(flatMap(clPaths, async path =>
+            // eslint-disable-next-line implicit-arrow-linebreak
+            Promise.all(flatMap(Object.entries(kinds), async ([kind, setup]) =>
+                // eslint-disable-next-line implicit-arrow-linebreak
+                Promise.all(randomSecrets(kind, setup).map(async (secret) => {
+                    const postResp = await apiV1user.post(path, secret);
+                    expect(postResp.status).toBe(201);
+                    expect(postResp.data.id).toBeDefined();
+
+                    const id = postResp.data.id;
+
+                    const getResp = await apiV1user.get(`${path}/${id}`);
+                    expect(getResp.status).toBe(200);
+                    expect(getResp.data).toEqual({...maskSecrets(secret), ...{id}});
+
+                    const deleteResp = await apiV1user.delete(`${path}/${id}`);
+                    expect(deleteResp.status).toBe(204);
+
+                    const getNoneResp = await apiV1user.get(`${path}/${id}`);
+                    expect(getNoneResp.status).toBe(404);
+                }))
+            ))
+        ));
     });
 
     test('create by example', () => {
