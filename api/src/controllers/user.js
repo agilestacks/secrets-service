@@ -37,13 +37,13 @@ module.exports = {
             const wvt = withToken(ctx.vaultToken);
 
             const tokenPolicyResp = await api.put(`/sys/policy/${id}-tokens`, {
-                rules: tokenPolicy
+                policy: tokenPolicy
             }, wvt);
 
             const policies = allowedEntities.map(entity => `${id}-${entity}`);
 
             const policiesResp = await Promise.all(policies
-                .map(policy => api.put(`/sys/policy/${policy}`, {rules: '#'}, wvt))
+                .map(policy => api.put(`/sys/policy/${policy}`, {policy: '#'}, wvt))
             );
 
             if (goodStatus(tokenPolicyResp, ...policiesResp)) {
