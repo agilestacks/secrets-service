@@ -3,13 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dredd": "dredd --config test/dredd.yaml",
     "jest": "jest",
     "lint": "eslint server.js src/ test/",
     "lint:junit": "eslint -o eslint-junit.xml -f junit server.js src/",
     "test": "npm run jest",
-    "test-spec": "npm run dredd",
-    "test-all": "npm run dredd && npm run jest",
     "debug": "node --inspect server.js"
   },
   "dependencies": {
@@ -25,7 +22,6 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "dredd": "^8.0.6",
     "eslint": "^5.15.3",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
