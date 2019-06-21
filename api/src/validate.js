@@ -1,7 +1,15 @@
 const {flatten, values: lovalues} = require('lodash');
 const {BadRequestError} = require('./errors');
 
-const allowedEntities = ['environments', 'cloud-accounts', 'licenses', 'templates', 'instances', 'service-accounts'];
+const allowedEntities = [
+    'environments',
+    'cloud-accounts',
+    'licenses',
+    'templates',
+    'instances',
+    'applications',
+    'service-accounts'
+];
 // this setup must be duplicated to ../test/api.test.js
 const allowedKinds = [
     'password', 'cloudAccount', 'cloudAccessKeys', 'privateKey',
