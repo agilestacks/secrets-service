@@ -60,13 +60,13 @@ function checkSecretKind(secretKind) {
 }
 
 function checkCloudKind(secretKind, cloudKind, mustBeCloudAccount = false) {
-    if (secretKind === 'cloudAccount') {
+    if (['cloudAccount', 'cloudAccessKeys'].includes(secretKind)) {
         if (!allowedClouds.some(kind => kind === cloudKind)) {
             const error = `Secret 'cloud' must be one of '${allowedClouds.join(', ')}'; got '${cloudKind}'`;
             throw new BadRequestError(error);
         }
     } else if (mustBeCloudAccount) {
-        throw new BadRequestError('Secret is not `cloudAccount` kind');
+        throw new BadRequestError('Secret is not [`cloudAccount`, `cloudAccessKeys`] kind');
     }
 }
 

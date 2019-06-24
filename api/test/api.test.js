@@ -248,7 +248,7 @@ describe('secrets', () => {
                 'auth_uri', 'token_uri', 'auth_provider_x509_cert_url', 'client_x509_cert_url'
             ]
         },
-        cloudAccessKeys: ['accessKey', 'secretKey'],
+        cloudAccessKeys: {aws: ['accessKey', 'secretKey']},
         privateKey: ['privateKey'],
         certificate: ['certificate'],
         sshKey: ['sshKey'],
@@ -264,7 +264,7 @@ describe('secrets', () => {
     };
     const randomSecrets = (kind, setup) => {
         const name = () => ({name: `${kind}-${uuidv4()}`});
-        const init = kind === 'cloudAccount' ?
+        const init = ['cloudAccount', 'cloudAccessKeys'].includes(kind) ?
             Object.entries(setup).map(([cloud, fields]) => ({fields, common: {kind, ...name(), cloud}})) :
             [{fields: setup, common: {kind, ...name()}}];
         return init.map(({fields, common}) => ({
