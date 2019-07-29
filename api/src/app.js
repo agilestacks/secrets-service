@@ -3,7 +3,7 @@ const apiPrefix = '/api/v1';
 const Koa = require('koa');
 const parser = require('koa-bodyparser');
 const Router = require('koa-router');
-const {loggerFactory} = require('./logger');
+const {logger: defaultLogger} = require('./logger');
 const {ApiError, ErrorWrapper, ForbiddenError} = require('./errors');
 
 const versionC = require('./controllers/version');
@@ -63,7 +63,7 @@ router.post('/tokens/revoke', tokenC.revoke);
 module.exports = app
     .use(parser())
     .use(async (ctx, next) => {
-        ctx.logger = loggerFactory();
+        ctx.logger = defaultLogger;
         await next();
     })
     .use(pingRouter.routes())
