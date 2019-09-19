@@ -78,6 +78,12 @@ pipeline {
     }
 
     stage('Deploy') {
+      when {
+        anyOf {
+          branch 'master'
+          triggeredBy cause: 'UserIdCause'
+        }
+      }
       steps {
         container('toolbox') {
           script {
