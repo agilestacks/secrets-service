@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid/v4');
+const {v4: uuidv4} = require('uuid');
 const {pick: lopick, isEmpty, partition} = require('lodash');
 const {allowedEntities, allowedFields, checkEntityKind, checkSecretKind, checkCloudKind} = require('../validate');
 const {maskSecrets} = require('../mask');

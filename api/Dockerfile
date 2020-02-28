@@ -1,4 +1,4 @@
-FROM node:10.16
+FROM node:12.16-alpine3.11
 
 LABEL maintainer="Arkadi Shishlov <arkadi@agilestacks.com>"
 
