@@ -55,6 +55,8 @@ module.exports = {
                     const role = {
                         period: 7200,
                         bind_secret_id: true,
+                        secret_id_ttl: 60,
+                        secret_id_num_uses: 1,
                         policies
                     };
                     roleResp = await api.post(rolePath, role, wvt);
@@ -197,8 +199,7 @@ module.exports = {
                 }
             } else {
                 const wvt = withToken(ctx.vaultToken);
-                const respSecretId = await api.post(`/auth/approle/role/${id}/secret-id`,
-                    {secret_id_ttl: 60, secret_id_num_uses: 1}, wvt);
+                const respSecretId = await api.post(`/auth/approle/role/${id}/secret-id`, undefined, wvt);
                 if (goodStatus(respSecretId)) {
                     const secretId = respSecretId.data.data.secret_id;
                     const respLogin = await api.post('/auth/approle/login',
