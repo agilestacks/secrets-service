@@ -211,13 +211,11 @@ module.exports = {
                             ttl: respLogin.data.auth.lease_duration
                         };
                     } else {
-                        // TODO: handle this type of errors in common way
                         logger.warn('Unexpected status %d from Vault during role `%s` login: %j',
                             respLogin.status, id, respLogin.data);
                         ctx.status = proxyErrorStatus(respLogin);
                     }
                 } else {
-                    // TODO: handle this type of errors in common way
                     logger.warn('Unexpected status %d from Vault while obtaining secret-id for role `%s`: %j',
                         respSecretId.status, id, respSecretId.data);
                     ctx.status = proxyErrorStatus(respSecretId);
