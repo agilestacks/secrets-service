@@ -17,7 +17,7 @@ lifecycle:
   - kubernetes
 
 parameters:
-- name: component.vault.url
+- name: component.vault.endpoint
 - name: component.secrets-service
   parameters:
   - name: namespace

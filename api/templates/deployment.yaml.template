@@ -29,7 +29,7 @@ spec:
         imagePullPolicy: Always
         env:
         - name: VAULT_API
-          value: "${component.vault.url}/v1"
+          value: "${component.vault.endpoint}/v1"
         - name: SECRETS_PORT
           value: "3002"
         ports:
