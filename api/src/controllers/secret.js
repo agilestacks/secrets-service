@@ -22,7 +22,7 @@ module.exports = {
         checkEntityKind(entityKind);
         const secret = lopick(body, allowedFields);
         checkSecretKind(secret.kind);
-        checkCloudKind(secret.kind, secret.cloud);
+        checkCloudKind(secret);
         const id = uuidv4();
         if (entityId.startsWith('stub-')) {
             stubSecrets.set(id, secret);
@@ -51,7 +51,7 @@ module.exports = {
         checkEntityKind(entityKind);
         const update = lopick(body, allowedFields);
         checkSecretKind(update.kind);
-        checkCloudKind(update.kind, update.cloud);
+        checkCloudKind(update);
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
@@ -229,7 +229,7 @@ module.exports = {
         const patch = lopick(body, allowedFields);
         if (patch.kind) {
             checkSecretKind(patch.kind);
-            checkCloudKind(patch.kind, patch.cloud); // if `kind=cloud` is presented, then `cloud` must be set
+            checkCloudKind(patch); // if `kind=cloud` is presented, then `cloud` must be set
         }
 
         let fromSecret;
@@ -304,7 +304,7 @@ module.exports = {
         if (entityId.startsWith('stub-')) {
             const secret = stubSecrets.get(id);
             if (secret) {
-                checkCloudKind(secret.kind, secret.cloud, true);
+                checkCloudKind(secret, true);
                 ctx.status = 200;
                 ctx.body = {
                     cloud: 'aws',
@@ -329,7 +329,7 @@ module.exports = {
                 }
             } else {
                 const secret = resp.data.data;
-                checkCloudKind(secret.kind, secret.cloud, true);
+                checkCloudKind(secret, true);
                 let session;
                 switch (secret.cloud) {
                 case 'aws':

@@ -21,6 +21,9 @@ Supported types of `kind` field in secret object are: `password`, `cloudAccount`
 For `kind = 'cloudAccount'`, Secrets Service will check secret object `cloud` field is one of:
 `aws`, `azure`, `gcp`.
 
+For `cloud = 'aws'` Secret Service additionally accept `region` and `sts` AWS endpoint in
+`https://sts(.region).amazonaws.com` format.
+
 ## Secret [/secrets/{entityKind}/{entityId}/{secretId}]
 
 + Parameters
@@ -103,8 +106,9 @@ Cloud account entity:
 Post to cloud account session endpoint returns cloud-specific credentials to access cloud account.
 
 For AWS a set of temporary security credentials are issued. The keys are valid for `duration` of the request
-or the secret, or the STS default of 1 hour.
+or of the secret, or the STS default of 1 hour.
 Optionaly send `purpose` to be included as part of _role session name_ sent to STS.
+Optionally set `region` and `sts` (endpoint).
 
 For Azure and GCP as set of static credentials are returned.
 

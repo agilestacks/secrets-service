@@ -17,7 +17,7 @@ const allowedKinds = [
     'token', 'bearerToken', 'accessToken', 'refreshToken', 'loginToken'
 ];
 const cloudAllowedFields = {
-    aws: ['accessKey', 'secretKey', 'roleArn', 'externalId', 'duration'],
+    aws: ['accessKey', 'secretKey', 'roleArn', 'externalId', 'duration', 'region', 'sts'],
     azure: [
         'clientId',
         'clientSecret', 'clientCertificate',
@@ -44,6 +44,34 @@ const allowedFields = [
     ...flatten(lovalues(cloudAllowedFields))
 ];
 const allowedClouds = ['aws', 'azure', 'gcp'];
+const awsRegions = [
+    'af-south-1',
+    'ap-east-1',
+    'ap-northeast-1',
+    'ap-northeast-2',
+    'ap-northeast-3',
+    'ap-south-1',
+    'ap-southeast-1',
+    'ap-southeast-2',
+    'ca-central-1',
+    'cn-north-1',
+    'cn-northwest-1',
+    'eu-central-1',
+    'eu-north-1',
+    'eu-south-1',
+    'eu-west-1',
+    'eu-west-2',
+    'eu-west-3',
+    'me-south-1',
+    'sa-east-1',
+    'us-east-1',
+    'us-east-2',
+    'us-west-1',
+    'us-west-2',
+    'us-gov-east-1',
+    'us-gov-west-1'
+];
+const awsStsPattern = /^https:\/\/sts(\..+)?\.amazonaws\.com$/;
 
 function checkEntityKind(entityKind) {
     if (!allowedEntities.some(kind => kind === entityKind)) {
@@ -59,11 +87,29 @@ function checkSecretKind(secretKind) {
     }
 }
 
-function checkCloudKind(secretKind, cloudKind, mustBeCloudAccount = false) {
+function checkAwsCloud(secret) {
+    const {region, sts} = secret;
+    if (sts) {
+        if (!awsStsPattern.test(sts)) {
+            throw new BadRequestError(`Secret 'sts' does not match ${awsStsPattern}; got '${sts}'`);
+        }
+    }
+    if (region) {
+        if (!awsRegions.includes(region)) {
+            throw new BadRequestError(`Secret 'region' not recognized; got '${region}'`);
+        }
+    }
+}
+
+function checkCloudKind(secret, mustBeCloudAccount = false) {
+    const {kind: secretKind, cloud: cloudKind} = secret;
     if (['cloudAccount', 'cloudAccessKeys'].includes(secretKind)) {
         if (!allowedClouds.some(kind => kind === cloudKind)) {
             const error = `Secret 'cloud' must be one of '${allowedClouds.join(', ')}'; got '${cloudKind}'`;
             throw new BadRequestError(error);
+        }
+        if (cloudKind === 'aws') {
+            checkAwsCloud(secret);
         }
     } else if (mustBeCloudAccount) {
         throw new BadRequestError('Secret is not [`cloudAccount`, `cloudAccessKeys`] kind');

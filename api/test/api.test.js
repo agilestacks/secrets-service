@@ -515,6 +515,7 @@ describe('secrets', () => {
                 name: 'aws.role',
                 kind: 'cloudAccount',
                 cloud: 'aws',
+                sts: 'https://sts.us-east-2.amazonaws.com',
                 roleArn: 'arn:aws:iam::973998981304:role/secrets-service-test-role',
                 duration: 1234
             };
@@ -556,6 +557,7 @@ describe('secrets', () => {
                 name: 'aws.keys',
                 kind: 'cloudAccount',
                 cloud: 'aws',
+                region: 'us-gov-east-1',
                 accessKey: '',
                 secretKey: ''
             };

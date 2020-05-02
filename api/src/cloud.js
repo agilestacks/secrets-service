@@ -7,12 +7,12 @@ const {maskRole, maskKey} = require('./mask');
 const {BadRequestError, ServerError} = require('./errors');
 
 aws.config = awsConfig();
-const sts = new aws.STS();
 const stsTtl = 3600;
 
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
 
-function awsAssumeRole(roleName, externalId, duration, purpose) {
+function awsAssumeRole(roleName, externalId, {duration, purpose, ...options}) {
+    const sts = new aws.STS(awsConfig(options));
     const prefix = purpose.substring(0, 57).replace(/[^\w+=,.@-]/g, '-');
     const params = {
         RoleArn: roleName,
@@ -23,16 +23,16 @@ function awsAssumeRole(roleName, externalId, duration, purpose) {
     return sts.assumeRole(params).promise();
 }
 
-function awsGetSessionToken(accessKeyId, secretAccessKey, duration) {
-    const accountSts = new aws.STS(awsConfig({accessKeyId, secretAccessKey}));
+function awsGetSessionToken(accessKeyId, secretAccessKey, {duration, ...options}) {
+    const sts = new aws.STS(awsConfig({accessKeyId, secretAccessKey, ...options}));
     const params = {
         DurationSeconds: duration
     };
-    return accountSts.getSessionToken(params).promise();
+    return sts.getSessionToken(params).promise();
 }
 
 async function awsSession(secret, requestBody) {
-    let {duration} = requestBody || {};
+    let {duration, sts, region} = requestBody || {};
     const secretDuration = parseInt(secret.duration, 10);
     if (!duration) {
         duration = secretDuration || stsTtl;
@@ -41,6 +41,8 @@ async function awsSession(secret, requestBody) {
         duration = secretDuration;
     }
     duration = parseInt(duration, 10);
+    if (!sts) sts = secret.sts; // eslint-disable-line prefer-destructuring
+    if (!region) region = secret.region; // eslint-disable-line prefer-destructuring
 
     let stsReply;
     if (secret.roleArn) {
@@ -48,7 +50,8 @@ async function awsSession(secret, requestBody) {
             ? requestBody.purpose
             : 'automation';
         try {
-            stsReply = await awsAssumeRole(secret.roleArn, secret.externalId, duration, purpose);
+            stsReply = await awsAssumeRole(secret.roleArn, secret.externalId,
+                {purpose, duration, region, endpoint: sts});
         } catch (err) {
             throw new ServerError(
                 `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`,
@@ -57,7 +60,8 @@ async function awsSession(secret, requestBody) {
         }
     } else if (secret.accessKey && secret.secretKey) {
         try {
-            stsReply = await awsGetSessionToken(secret.accessKey, secret.secretKey, duration);
+            stsReply = await awsGetSessionToken(secret.accessKey, secret.secretKey,
+                {duration, region, endpoint: sts});
         } catch (err) {
             throw new ServerError(
                 `AWS STS error getting session token for '${maskKey(secret.accessKey)}': ${err}`,
