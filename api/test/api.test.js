@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const {flatMap, fromPairs, merge} = require('lodash');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
-const uuidv4 = require('uuid/v4');
+const {v4: uuidv4} = require('uuid');
 
 const {maskSecrets} = require('../src/mask');
 
