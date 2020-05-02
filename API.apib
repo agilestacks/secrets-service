@@ -101,14 +101,14 @@ Cloud account entity:
 + Response 504
 
 
-### Retrieve Cloud Account Session [POST /secrets/cloud-account/{cloudAccountId}/{secretId}/session-keys]
+### Retrieve Cloud Account Session [POST /secrets/cloud-accounts/{cloudAccountId}/{secretId}/session-keys]
 
 Post to cloud account session endpoint returns cloud-specific credentials to access cloud account.
 
 For AWS a set of temporary security credentials are issued. The keys are valid for `duration` of the request
 or of the secret, or the STS default of 1 hour.
-Optionaly send `purpose` to be included as part of _role session name_ sent to STS.
-Optionally set `region` and `sts` (endpoint).
+Optionally, send `purpose` to be included as part of _role session name_ sent to STS.
+Optionally, set `region` and `sts` (endpoint).
 
 For Azure and GCP as set of static credentials are returned.
 
@@ -209,6 +209,40 @@ the settings, for example `"_envAsFiles": ["GOOGLE_APPLICATION_CREDENTIALS"]`,  
                 ]
             }
 
+### Retrieve Cloud Account Session via intermediary [POST /secrets/cloud-accounts/{cloudAccountId}/{secretId}/session-keys/via/cloud-accounts/{viaCloudAccountId}/{viaSecretId}]
+
+First retrieve `viaSecretId` session, then retreve and return `secretId` session using that.
+This works for AWS only. `X-Via-Secrets-Token` is used to fetch Via Secret from Vault.
+
+The use case is to have a set of static credentials to assume (cross-account) role.
+This allows (1) Secrets Service on-prem - without instance profile - to work with multiple AWS accounts;
+(2) Secrets Service in public cloud to issue GovCloud session and vice versa.
+
++ Parameters
+    + cloudAccountId: `123` (string) - ID of the Cloud Account
+    + secretId: `02a669c0-543b-432f-a11d-fb21f29c7200` (string) - ID of the Secret
+    + viaCloudAccountId: `456` (string) - ID of the Via Cloud Account
+    + viaSecretId: `4676a1a6-dd9c-4f86-b4fc-9c049c0674e7` (string) - ID of the Via Secret
+
++ Request
+
+    + Headers
+
+            X-Secrets-Token: user-token
+            X-Via-Secrets-Token: via-user-token
+
+    + Body
+
+            {
+            }
+
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+            }
 
 ### Create Secret [POST /secrets/{entityKind}/{entityId}]
 

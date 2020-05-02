@@ -1,6 +1,6 @@
 /* eslint-disable prefer-destructuring, no-underscore-dangle */
 const crypto = require('crypto');
-const {flatMap, fromPairs} = require('lodash');
+const {flatMap, fromPairs, merge} = require('lodash');
 const axios = require('axios');
 const httpAdapter = require('axios/lib/adapters/http');
 const uuidv4 = require('uuid/v4');
@@ -19,10 +19,8 @@ const apiConfig = {
     validateStatus: () => true
 };
 const withApiPrefix = {baseURL: `${apiConfig.baseURL}${apiPrefix}`};
-const withToken = (token) => {
-    const headers = {headers: {'X-Secrets-Token': token}};
-    return headers;
-};
+const withToken = token => ({headers: {'X-Secrets-Token': token}});
+const withViaToken = token => ({headers: {'X-Via-Secrets-Token': token}});
 const authServiceLoginPath = '/apps/authentication-service/login';
 const serviceRoles = (highPrivRoleId, lowPrivRoleId) => {
     const roles = {highPrivRoleId, lowPrivRoleId};
@@ -219,9 +217,12 @@ describe('secrets', () => {
     let apiV1serviceHigh;
     let apiV1serviceLow;
     let apiV1user;
+    let apiV1userVia;
 
     const paths = ['/secrets/environments/env-1', '/secrets/cloud-accounts/clacc-1'];
     const clPaths = ['/secrets/cloud-accounts/clacc-1', '/secrets/cloud-accounts/clacc-2'];
+    const clViaEntity = 'cloud-accounts/clacc-static';
+    const clViaPath = `/secrets/${clViaEntity}`;
     const secretTemplate = add => ({
         name: 'component.postgresql.password',
         kind: 'password',
@@ -278,7 +279,7 @@ describe('secrets', () => {
             serviceRoles(vaultServiceRoles.highPrivAuth, vaultServiceRoles.lowPrivAuth));
         const tokenHigh = loginResp.data.highPrivToken;
         const tokenLow = loginResp.data.lowPrivToken;
-        const config = {...apiConfig, ...withApiPrefix};
+        let config = {...apiConfig, ...withApiPrefix};
 
         apiV1serviceHigh = axios.create({...config, ...withToken(tokenHigh)});
         apiV1serviceLow = axios.create({...config, ...withToken(tokenLow)});
@@ -287,11 +288,13 @@ describe('secrets', () => {
         const putResp = await apiV1serviceHigh.put(user);
         const roleId = putResp.data.roleId;
         await apiV1serviceHigh.put(`${user}/environments`, {environments: ['env-1']});
-        await apiV1serviceHigh.put(`${user}/cloud-accounts`, {cloudAccounts: ['clacc-1', 'clacc-2']});
+        await apiV1serviceHigh.put(`${user}/cloud-accounts`, {cloudAccounts: ['clacc-1', 'clacc-2', 'clacc-static']});
         const userLoginResp = await apiV1serviceLow.post(`${user}/login`, {roleId});
         const tokenUser = userLoginResp.data.token;
 
-        apiV1user = axios.create({...config, ...withToken(tokenUser)});
+        config = merge(config, withToken(tokenUser));
+        apiV1user = axios.create(config);
+        apiV1userVia = axios.create(merge(config, withViaToken(tokenUser)));
     };
 
     beforeAll(setupApi);
@@ -546,6 +549,66 @@ describe('secrets', () => {
 
             const getNoneResp = await apiV1user.get(`${path}/${id}`);
             expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
+    test.skip('cloud session - AWS role via keys', () => {
+        expect.assertions(36);
+
+        return Promise.all(clPaths.map(async (path) => {
+            const secret = {
+                name: 'aws.role',
+                kind: 'cloudAccount',
+                cloud: 'aws',
+                sts: 'https://sts.us-east-2.amazonaws.com',
+                roleArn: 'arn:aws:iam::973998981304:role/secrets-service-test-role',
+                duration: 1234
+            };
+            const viaSecret = {
+                name: 'aws.keys',
+                kind: 'cloudAccount',
+                cloud: 'aws',
+                region: 'us-east-2',
+                accessKey: '',
+                secretKey: ''
+            };
+
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
+
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            const viaPostResp = await apiV1user.post(clViaPath, viaSecret);
+            expect(viaPostResp.status).toBe(201);
+            expect(viaPostResp.headers.location).toBeDefined();
+            expect(viaPostResp.data.id).toBeDefined();
+
+            const viaId = viaPostResp.data.id;
+            const viaLocation = viaPostResp.headers.location;
+            expect(viaLocation).toBe(`${apiPrefix}${clViaPath}/${viaId}`);
+
+            const keysResp = await apiV1userVia.post(`${path}/${id}/session-keys/via/${clViaEntity}/${viaId}`,
+                {purpose: 'secrets service test'});
+            expect(keysResp.status).toBe(200);
+            expect(keysResp.data.cloud).toBeDefined();
+            expect(keysResp.data.accessKey).toBeDefined();
+            expect(keysResp.data.secretKey).toBeDefined();
+            expect(keysResp.data.sessionToken).toBeDefined();
+            expect(keysResp.data.ttl).toBeDefined();
+
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+            const viaDeleteResp = await apiV1user.delete(`${path}/${viaId}`);
+            expect(viaDeleteResp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+            const viaGetNoneResp = await apiV1user.get(`${path}/${viaId}`);
+            expect(viaGetNoneResp.status).toBe(404);
         }));
     });
 

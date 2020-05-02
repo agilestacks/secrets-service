@@ -56,6 +56,8 @@ router.get('/secrets/:entityKind/:entityId/:id', secretC.get);
 router.del('/secrets/:entityKind/:entityId/:id', secretC.delete);
 router.del('/secrets/:entityKind/:entityId', secretC.deleteAll);
 router.post('/secrets/:entityKind/:entityId/:id/session-keys', secretC.sessionKeys);
+router.post('/secrets/:entityKind/:entityId/:id/session-keys/via/:viaEntityKind/:viaEntityId/:viaId',
+    secretC.sessionKeys);
 
 router.post('/tokens/renew', tokenC.renew);
 router.post('/tokens/revoke', tokenC.revoke);
@@ -101,11 +103,13 @@ module.exports = app
     .use(publicRouter.allowedMethods())
     .use(async (ctx, next) => {
         const {request: {headers: {
-            'x-secrets-token': token
+            'x-secrets-token': token,
+            'x-via-secrets-token': viaToken
         }}} = ctx;
 
         if (token) {
             ctx.vaultToken = token;
+            if (viaToken) ctx.viaVaultToken = viaToken;
             await next();
         } else {
             throw new ForbiddenError();

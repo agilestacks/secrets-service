@@ -2,10 +2,10 @@ const {v4: uuidv4} = require('uuid');
 const {pick: lopick, isEmpty, partition} = require('lodash');
 const {allowedEntities, allowedFields, checkEntityKind, checkSecretKind, checkCloudKind} = require('../validate');
 const {maskSecrets} = require('../mask');
-const {awsSession, azureSession, gcpSession} = require('../cloud');
+const {awsSession, awsSessionVia, azureSession, gcpSession} = require('../cloud');
 const {api, withToken, goodStatus, proxyErrorStatus} = require('../vault');
 const {logger} = require('../logger');
-const {NotFoundError, BadRequestError, ServerError} = require('../errors');
+const {NotFoundError, BadRequestError, ForbiddenError, ServerError} = require('../errors');
 
 const stubSecrets = new Map();
 
@@ -296,7 +296,8 @@ module.exports = {
 
     async sessionKeys(ctx) {
         const {
-            params: {id, entityId, entityKind},
+            params: {id, entityId, entityKind,
+                viaId, viaEntityId, viaEntityKind},
             request: {body}
         } = ctx;
 
@@ -331,17 +332,48 @@ module.exports = {
                 const secret = resp.data.data;
                 checkCloudKind(secret, true);
                 let session;
-                switch (secret.cloud) {
-                case 'aws':
-                    session = await awsSession(secret, body);
-                    break;
-                case 'azure':
-                    session = azureSession(secret);
-                    break;
-                case 'gcp':
-                    session = gcpSession(secret);
-                    break;
-                default:
+                if (viaId) {
+                    if (secret.cloud !== 'aws') {
+                        throw new BadRequestError(
+                            `Secret 'cloud' must be 'aws' to call '/via' resoure; got '${secret.cloud}'`,
+                            405);
+                    }
+                    if (!ctx.viaVaultToken) {
+                        throw new ForbiddenError();
+                    }
+                    const viaPath = `/secret/${viaEntityKind}/${viaEntityId}/secrets/${viaId}`;
+                    const viaResp = await api.get(viaPath, withToken(ctx.viaVaultToken));
+                    if (viaResp.status !== 200) {
+                        if (viaResp.status === 404) {
+                            throw new NotFoundError();
+                        } else {
+                            logger.warn('Unexpected status %d from Vault reading secret `%s`: %j',
+                                viaResp.status, viaPath, viaResp.data);
+                            ctx.status = proxyErrorStatus(viaResp);
+                            return;
+                        }
+                    }
+                    const viaSecret = viaResp.data.data;
+                    checkCloudKind(viaSecret, true);
+                    if (viaSecret.cloud !== 'aws') {
+                        throw new BadRequestError(
+                            `Via secret 'cloud' must be 'aws' to call under '/via' resoure; got '${secret.cloud}'`,
+                            405);
+                    }
+                    session = await awsSessionVia(secret, viaSecret, body);
+                } else {
+                    switch (secret.cloud) {
+                    case 'aws':
+                        session = await awsSession(secret, body);
+                        break;
+                    case 'azure':
+                        session = azureSession(secret);
+                        break;
+                    case 'gcp':
+                        session = gcpSession(secret);
+                        break;
+                    default:
+                    }
                 }
                 ctx.status = 200;
                 ctx.body = {cloud: secret.cloud, ...session};

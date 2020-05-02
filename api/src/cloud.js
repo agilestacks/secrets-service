@@ -11,8 +11,8 @@ const stsTtl = 3600;
 
 const randomSuf = () => crypto.randomBytes(3).toString('hex');
 
-function awsAssumeRole(roleName, externalId, {duration, purpose, ...options}) {
-    const sts = new aws.STS(awsConfig(options));
+function awsAssumeRole(roleName, externalId, {duration, purpose, credentials, ...options}) {
+    const sts = new aws.STS({...awsConfig(options), credentials});
     const prefix = purpose.substring(0, 57).replace(/[^\w+=,.@-]/g, '-');
     const params = {
         RoleArn: roleName,
@@ -31,7 +31,7 @@ function awsGetSessionToken(accessKeyId, secretAccessKey, {duration, ...options}
     return sts.getSessionToken(params).promise();
 }
 
-async function awsSession(secret, requestBody) {
+async function awsSession(secret, requestBody, credentials = null) {
     let {duration, sts, region} = requestBody || {};
     const secretDuration = parseInt(secret.duration, 10);
     if (!duration) {
@@ -51,7 +51,7 @@ async function awsSession(secret, requestBody) {
             : 'automation';
         try {
             stsReply = await awsAssumeRole(secret.roleArn, secret.externalId,
-                {purpose, duration, region, endpoint: sts});
+                {purpose, duration, region, endpoint: sts, credentials});
         } catch (err) {
             throw new ServerError(
                 `AWS STS error assuming role '${maskRole(secret.roleArn)}': ${err}`,
@@ -89,6 +89,16 @@ async function awsSession(secret, requestBody) {
     };
 }
 
+async function awsSessionVia(secret, viaSecret, requestBody) {
+    // only Role session is allowed Via
+    if (!secret.roleArn) {
+        throw new BadRequestError('The requested secret has no `roleArn` defined', 405);
+    }
+    const via = await awsSession(viaSecret, requestBody);
+    const credentials = new aws.Credentials(via.accessKey, via.secretKey, via.sessionToken);
+    return awsSession(secret, requestBody, credentials);
+}
+
 function azureSession(secret) {
     const auth = lopick(secret, cloudAllowedFields.azure);
     return {
@@ -117,6 +127,7 @@ function gcpSession(secret) {
 
 module.exports = {
     awsSession,
+    awsSessionVia,
     azureSession,
     gcpSession
 };
