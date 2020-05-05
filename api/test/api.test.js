@@ -510,6 +510,48 @@ describe('secrets', () => {
         }));
     });
 
+    test('cloud account - unmask', () => {
+        expect.assertions(30);
+
+        return Promise.all(clPaths.map(async (path) => {
+            const secret = {
+                name: 'customer.account',
+                kind: 'cloudAccount',
+                cloud: 'aws',
+                roleArn: 'arn:aws:iam::973998981304:role/secrets-service-test-role',
+                externalId: '4f606425________________________________',
+                accessKey: 'AKIAJWMTY___________',
+                secretKey: '3SaIOZR1________________________________'
+            };
+
+            const postResp = await apiV1user.post(path, secret);
+            expect(postResp.status).toBe(201);
+            expect(postResp.headers.location).toBeDefined();
+            expect(postResp.data.id).toBeDefined();
+
+            const id = postResp.data.id;
+            const location = postResp.headers.location;
+            expect(location).toBe(`${apiPrefix}${path}/${id}`);
+
+            const getResp = await apiV1user.get(`${path}/${id}?unmask=true`);
+            expect(getResp.status).toBe(200);
+            expect(getResp.data.id).toBe(id);
+            expect(getResp.data.name).toBe(secret.name);
+            expect(getResp.data.kind).toBe(secret.kind);
+            expect(getResp.data.cloud).toBe(secret.cloud);
+            expect(getResp.data.roleArn).toBe(secret.roleArn);
+            expect(getResp.data.externalId).toBe(secret.externalId);
+            expect(getResp.data.accessKey).toBe(secret.accessKey);
+            expect(getResp.data.secretKey).toBe(secret.secretKey);
+
+            const deleteResp = await apiV1user.delete(`${path}/${id}`);
+            expect(deleteResp.status).toBe(204);
+
+            const getNoneResp = await apiV1user.get(`${path}/${id}`);
+            expect(getNoneResp.status).toBe(404);
+        }));
+    });
+
     test('cloud session - AWS role', () => {
         expect.assertions(30);
 

@@ -187,7 +187,8 @@ module.exports = {
 
     async get(ctx) {
         const {
-            params: {id, entityId, entityKind}
+            params: {id, entityId, entityKind},
+            query: {unmask}
         } = ctx;
 
         checkEntityKind(entityKind);
@@ -213,7 +214,11 @@ module.exports = {
                 }
             } else {
                 ctx.status = 200;
-                ctx.body = {...maskSecrets(resp.data.data), ...{id}};
+                let secret = resp.data.data;
+                if (!unmask) {
+                    secret = maskSecrets(secret);
+                }
+                ctx.body = {...secret, ...{id}};
             }
         }
     },
