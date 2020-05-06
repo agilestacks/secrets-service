@@ -41,6 +41,10 @@ async function awsSession(secret, requestBody, credentials = null) {
         duration = secretDuration;
     }
     duration = parseInt(duration, 10);
+    // The requested DurationSeconds exceeds the 1 hour session limit for roles assumed by role chaining
+    if (credentials && credentials.sessionToken && duration > 3600) {
+        duration = 3600;
+    }
     if (!sts) sts = secret.sts; // eslint-disable-line prefer-destructuring
     if (!region) region = secret.region; // eslint-disable-line prefer-destructuring
 
@@ -94,7 +98,9 @@ async function awsSessionVia(secret, viaSecret, requestBody) {
     if (!secret.roleArn) {
         throw new BadRequestError('The requested secret has no `roleArn` defined', 405);
     }
-    const via = await awsSession(viaSecret, requestBody);
+    const via = viaSecret.roleArn ?
+        await awsSession(viaSecret, requestBody) :
+        lopick(viaSecret, ['accessKey', 'secretKey']); // verified to exist
     const credentials = new aws.Credentials(via.accessKey, via.secretKey, via.sessionToken);
     return awsSession(secret, requestBody, credentials);
 }

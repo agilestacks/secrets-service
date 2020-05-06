@@ -99,6 +99,10 @@ function checkAwsCloud(secret) {
             throw new BadRequestError(`Secret 'region' not recognized; got '${region}'`);
         }
     }
+    if (!(secret.roleArn || (secret.accessKey && secret.secretKey))) {
+        throw new BadRequestError(
+            'Secret has no `roleArn`, nor `accessKey` with `secretKey` defined');
+    }
 }
 
 function checkCloudKind(secret, mustBeCloudAccount = false) {
