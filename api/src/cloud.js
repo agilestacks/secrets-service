@@ -85,10 +85,13 @@ async function awsSession(secret, requestBody, credentials = null) {
         secretKey: creds.SecretAccessKey,
         sessionToken: creds.SessionToken,
         ttl: duration,
+        ...(region ? {region} : {}),
+        ...(sts ? {sts} : {}),
         _env: {
             AWS_ACCESS_KEY_ID: creds.AccessKeyId,
             AWS_SECRET_ACCESS_KEY: creds.SecretAccessKey,
-            AWS_SESSION_TOKEN: creds.SessionToken
+            AWS_SESSION_TOKEN: creds.SessionToken,
+            ...(region ? {AWS_DEFAULT_REGION: region} : {})
         }
     };
 }

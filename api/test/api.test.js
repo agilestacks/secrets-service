@@ -595,7 +595,7 @@ describe('secrets', () => {
     });
 
     test.skip('cloud session - AWS role via keys', () => {
-        expect.assertions(36);
+        expect.assertions(38);
 
         return Promise.all(clPaths.map(async (path) => {
             const secret = {
@@ -640,7 +640,8 @@ describe('secrets', () => {
             expect(keysResp.data.accessKey).toBeDefined();
             expect(keysResp.data.secretKey).toBeDefined();
             expect(keysResp.data.sessionToken).toBeDefined();
-            expect(keysResp.data.ttl).toBeDefined();
+            expect(keysResp.data.ttl).toBe(1234);
+            expect(keysResp.data.sts).toBe(secret.sts);
 
             const deleteResp = await apiV1user.delete(`${path}/${id}`);
             expect(deleteResp.status).toBe(204);
@@ -655,7 +656,7 @@ describe('secrets', () => {
     });
 
     test.skip('cloud session - AWS keys', () => {
-        expect.assertions(24);
+        expect.assertions(26);
 
         return Promise.all(clPaths.map(async (path) => {
             const secret = {
@@ -684,6 +685,7 @@ describe('secrets', () => {
             expect(keysResp.data.secretKey).toBeDefined();
             expect(keysResp.data.sessionToken).toBeDefined();
             expect(keysResp.data.ttl).toBeDefined();
+            expect(keysResp.data.region).toBe(secret.region);
 
             const deleteResp = await apiV1user.delete(`${path}/${id}`);
             expect(deleteResp.status).toBe(204);
