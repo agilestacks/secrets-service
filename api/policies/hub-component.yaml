@@ -11,6 +11,12 @@ requires:
 - vault
 - kubernetes
 
+lifecycle:
+  verbs:
+  - deploy
+  - undeploy
+  - backup
+
 parameters:
 - name:  dns.domain
   env:   DOMAIN_NAME
