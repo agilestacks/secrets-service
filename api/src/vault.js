@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const apiConfig = {
     baseURL: process.env.VAULT_API || 'http://localhost:8200/v1',
-    timeout: 10000,
+    timeout: 20000,
     maxContentLength: 65536,
     validateStatus: () => true
 };
