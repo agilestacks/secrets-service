@@ -41,7 +41,7 @@ install:
 
 lint:
 	@npm run lint
-.PHONY: test
+.PHONY: lint
 
 test:
 	@npm test
@@ -53,7 +53,7 @@ run:
 
 vault-test-setup:
 	@bin/vault-test-setup.sh
-.PHONY: vault-test
+.PHONY: vault-test-setup
 
 run-telepresence:
 	$(telepresence) --run npm start
