@@ -11,9 +11,9 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-        provider: agilestacks.com
-        project: secrets-service
-        qualifier: api
+      provider: agilestacks.com
+      project: secrets-service
+      qualifier: api
   template:
     metadata:
       name: ${component.secrets-service.name}
