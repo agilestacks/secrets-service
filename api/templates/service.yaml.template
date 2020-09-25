@@ -6,8 +6,6 @@ metadata:
   labels:
     provider: agilestacks.com
     project: secrets-service
-    kubernetes.io/name: Secrets-Service
-    kubernetes.io/cluster-service: "true"
 spec:
   ports:
   - name: http
