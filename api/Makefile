@@ -2,8 +2,8 @@
 
 export AWS_DEFAULT_REGION ?= us-east-2
 
-DOMAIN_NAME   ?= dev.kubernetes.delivery
-REGISTRY      ?= $(subst https://,,$(lastword $(shell aws ecr get-login --region $(AWS_DEFAULT_REGION))))
+DOMAIN_NAME   ?= test.dev.superhub.io
+REGISTRY      ?= $(shell $(aws) sts get-caller-identity | jq -r .Account).dkr.ecr.$(AWS_DEFAULT_REGION).amazonaws.com
 IMAGE         ?= $(REGISTRY)/agilestacks/$(DOMAIN_NAME)/secrets-service
 IMAGE_VERSION ?= $(shell git rev-parse HEAD | colrm 7)
 NAMESPACE     ?= automation-hub
@@ -18,7 +18,7 @@ build:
 .PHONY: build
 
 push:
-	$(aws) ecr get-login --region $(AWS_DEFAULT_REGION) --no-include-email | $(SHELL) -
+	$(aws) ecr get-login-password --region $(AWS_DEFAULT_REGION) | $(docker) login --username AWS --password-stdin $(REGISTRY)
 	$(docker) tag  $(IMAGE):$(IMAGE_VERSION) $(IMAGE):latest
 	$(docker) push $(IMAGE):$(IMAGE_VERSION)
 	$(docker) push $(IMAGE):latest

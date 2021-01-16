@@ -22,11 +22,15 @@ parameters:
   parameters:
   - name: namespace
     value: automation-hub
-    env:  NAMESPACE
+    env: NAMESPACE
   - name: name
     value: secrets-service
   - name: image
-    env:  IMAGE
+    value: ${component.docker.registry.image}
+    env: IMAGE
+  - name: registry
+    value: ${component.docker.auth.host}
+    env: REGISTRY
 - name: dns.domain
   env: DOMAIN_NAME
 
