@@ -80,7 +80,6 @@ class ForbiddenError extends ApiError {
     }
 }
 
-
 class NotFoundError extends ApiError {
     constructor(message = 'Entity not found', meta = {}) {
         super(message);
