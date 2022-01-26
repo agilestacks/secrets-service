@@ -10,11 +10,11 @@ NAMESPACE     ?= automation-hub
 
 kubectl       ?= kubectl --context=$(DOMAIN_NAME) --namespace=$(NAMESPACE)
 telepresence  ?= telepresence -s secrets-service --context $(DOMAIN_NAME) --namespace $(NAMESPACE) --expose 3002
-docker        ?= docker
+docker        ?= nerdctl --namespace="k8s.io"
 aws           ?= aws
 
 build:
-	@ $(docker) build -t $(IMAGE):$(IMAGE_VERSION) .
+	@ $(docker) build -t $(IMAGE) .
 .PHONY: build
 
 push:
@@ -24,7 +24,7 @@ push:
 	$(docker) push $(IMAGE):latest
 .PHONY: push
 
-deploy: build push
+deploy: build
 	- $(kubectl) create namespace $(NAMESPACE)
 	$(kubectl) apply -f templates/service.yaml
 	$(kubectl) apply -f templates/deployment.yaml

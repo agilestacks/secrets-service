@@ -26,7 +26,7 @@ spec:
       containers:
       - name: api
         image: ${component.secrets-service.image}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: VAULT_API
           value: "${component.vault.endpoint}/v1"
